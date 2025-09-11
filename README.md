@@ -1,4 +1,4 @@
-# Carian Observatory AI Infrastructure Platform
+# Carian Observatory
 
 <img width="1000" height="563" alt="image" src="https://github.com/user-attachments/assets/38f7003b-92dd-47b2-8456-d71ddc27a1aa" />
 
