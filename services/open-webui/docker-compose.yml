@@ -1,0 +1,46 @@
+# Open-WebUI Service (Production)
+# IMPORTANT: Uses existing production volume 'open-webui-fw_open-webui'
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${WEBUI_VERSION:-v0.6.21}
+    container_name: ${USER_PREFIX}-open-webui-service
+    restart: unless-stopped
+    volumes:
+      # PRODUCTION VOLUME - DO NOT CHANGE
+      # This is the existing production data that must be preserved
+      - open-webui-data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-}
+      - OPENAI_API_BASE_URL=${OPENAI_API_BASE_URL:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - ENABLE_OPENROUTER_API=${ENABLE_OPENROUTER_API:-true}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_API_BASE_URL=${OPENROUTER_API_BASE_URL:-https://openrouter.ai/api/v1}
+      - SCARF_NO_ANALYTICS=true
+      - DO_NOT_TRACK=true
+      - ANONYMIZED_TELEMETRY=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  open-webui-data:
+    # Reference to existing production volume - DO NOT RECREATE
+    name: open-webui-fw_open-webui
+    external: true
+
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}_app-network

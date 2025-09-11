@@ -1,0 +1,42 @@
+# Nginx Reverse Proxy Service
+# Handles SSL termination and routing for all services
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: ${USER_PREFIX}-nginx-service
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
+      - MACHINE_ID=${MACHINE_ID}
+      - WEBUI_DOMAIN=${WEBUI_DOMAIN}
+      - PERPLEXICA_DOMAIN=${PERPLEXICA_DOMAIN}
+      - AUTH_DOMAIN=${AUTH_DOMAIN}
+      - CANARY_DOMAIN=${CANARY_DOMAIN}
+      - GENERIC_WEBUI_DOMAIN=${GENERIC_WEBUI_DOMAIN}
+      - GENERIC_PERPLEXICA_DOMAIN=${GENERIC_PERPLEXICA_DOMAIN}
+      - GENERIC_AUTH_DOMAIN=${GENERIC_AUTH_DOMAIN}
+    volumes:
+      - ./configs/https.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./ssl:/etc/ssl/custom:ro
+    depends_on:
+      - open-webui
+      - perplexica
+      - searxng
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}_app-network

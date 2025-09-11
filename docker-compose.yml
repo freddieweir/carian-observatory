@@ -1,0 +1,30 @@
+# Master Docker Compose Configuration
+# Uses Docker Compose 2.20+ include feature for modular service management
+#
+# Usage:
+#   docker compose up -d        # Start all services
+#   docker compose down         # Stop all services
+#   docker compose ps           # Check service status
+#
+# To disable a service, comment out its include line below
+
+name: carian-observatory
+
+# Include modular service definitions
+include:
+  # Infrastructure services
+  - path: services/onepassword/docker-compose.yml
+  
+  # Core services
+  - path: services/open-webui/docker-compose.yml
+  - path: services/perplexica/docker-compose.yml
+  - path: services/authelia/docker-compose.yml
+  - path: services/nginx/docker-compose.yml
+  
+  # Optional services (comment out if not needed)
+  - path: services/monitoring/docker-compose.yml
+  
+  # Canary testing (uncomment to enable)
+  - path: services/open-webui/docker-compose.canary.yml
+
+# Networks are defined in individual service modules

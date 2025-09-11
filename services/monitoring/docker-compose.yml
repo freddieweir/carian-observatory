@@ -1,0 +1,65 @@
+# Monitoring Services - Separate Watchtowers for Service and Canary
+
+services:
+  # Main service watchtower - weekly updates for stability
+  watchtower-service:
+    image: containrrr/watchtower
+    container_name: ${USER_PREFIX}-ow-watchtower-service
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=UTC
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_POLL_INTERVAL=604800  # Check weekly (7 days)
+      - WATCHTOWER_MONITOR_ONLY=false
+      - WATCHTOWER_NOTIFICATIONS_LEVEL=info
+      - WATCHTOWER_REMOVE_VOLUMES=false  # Never remove volumes
+      - WATCHTOWER_SCOPE=service
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.watchtower.scope=service"
+      - "com.carian-observatory.watchtower.schedule=weekly"
+    # Monitor main production services
+    command: >
+      --scope service
+      ${USER_PREFIX}-open-webui-service
+      ${USER_PREFIX}-perplexica-service
+      ${USER_PREFIX}-perplexica-searxng
+      ${USER_PREFIX}-authelia-service
+      ${USER_PREFIX}-authelia-redis
+      ${USER_PREFIX}-nginx-service
+
+  # Canary watchtower - daily updates for testing latest versions
+  watchtower-canary:
+    image: containrrr/watchtower
+    container_name: ${USER_PREFIX}-ow-watchtower-canary
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=UTC
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_POLL_INTERVAL=86400   # Check daily (24 hours)
+      - WATCHTOWER_MONITOR_ONLY=false
+      - WATCHTOWER_NOTIFICATIONS_LEVEL=info
+      - WATCHTOWER_REMOVE_VOLUMES=false  # Never remove volumes
+      - WATCHTOWER_SCOPE=canary
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.watchtower.scope=canary"
+      - "com.carian-observatory.watchtower.schedule=daily"
+    # Monitor canary services only
+    command: >
+      --scope canary
+      ${USER_PREFIX}-open-webui-canary
+
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}_app-network
