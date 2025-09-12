@@ -15,10 +15,12 @@ services:
       - WEBUI_DOMAIN=${WEBUI_DOMAIN}
       - PERPLEXICA_DOMAIN=${PERPLEXICA_DOMAIN}
       - AUTH_DOMAIN=${AUTH_DOMAIN}
+      - HOMEPAGE_DOMAIN=${HOMEPAGE_DOMAIN}
       - CANARY_DOMAIN=${CANARY_DOMAIN}
       - GENERIC_WEBUI_DOMAIN=${GENERIC_WEBUI_DOMAIN}
       - GENERIC_PERPLEXICA_DOMAIN=${GENERIC_PERPLEXICA_DOMAIN}
       - GENERIC_AUTH_DOMAIN=${GENERIC_AUTH_DOMAIN}
+      - GENERIC_HOMEPAGE_DOMAIN=${GENERIC_HOMEPAGE_DOMAIN}
     volumes:
       - ./configs/https.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./ssl:/etc/ssl/custom:ro
@@ -26,6 +28,7 @@ services:
       - open-webui
       - perplexica
       - searxng
+      - homepage
     networks:
       - app-network
     extra_hosts:
