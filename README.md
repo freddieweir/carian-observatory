@@ -27,7 +27,7 @@ docker compose logs -f [service-name]
 ### Core Services
 - **Open-WebUI**: AI chat interface at `https://webui.yourdomain.com`
 - **Perplexica**: AI-powered search at `https://perplexica.yourdomain.com`
-- **Authelia**: Authentication portal at `https://auth-m4.yourdomain.com`
+- **Authelia**: Authentication portal at `https://auth.yourdomain.com`
 - **Nginx**: Reverse proxy with SSL termination
 
 ### Architecture
@@ -62,9 +62,11 @@ Access at `http://localhost:8081`
 ## SSL Certificates
 
 Place certificates in `services/nginx/ssl/`:
-- `webui-m4.yourdomain.com.crt` + `.key`
-- `perplexica-m4.yourdomain.com.crt` + `.key`
-- `auth-m4.yourdomain.com.crt` + `.key`
+- `webui.yourdomain.com.crt` + `.key`
+- `perplexica.yourdomain.com.crt` + `.key`
+- `auth.yourdomain.com.crt` + `.key`
+
+**Note**: Simplified domain names are used for local networks (no machine ID suffix).
 
 Generate self-signed certificates:
 ```bash
