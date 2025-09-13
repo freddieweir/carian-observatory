@@ -87,6 +87,15 @@ token_cache*
 nginx/*.conf
 !nginx/*.conf.template
 
+# Generated scripts with real domains (use templates instead)
+**/scripts/*.sh
+!**/scripts/*.sh.template
+!**/scripts/create-scripts.sh
+
+# Generated configuration files with real domains (use templates instead)
+**/configs/services.yaml
+!**/configs/services.yaml.template
+
 # =============================================================================
 # SECURITY - APPLICATION DATA AND RUNTIME FILES  
 # =============================================================================

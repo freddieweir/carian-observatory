@@ -1,0 +1,11 @@
+---
+# Homepage Docker Integration - Carian Observatory Platform
+# Documentation: https://gethomepage.dev/latest/configs/docker/
+
+# Docker socket connection for container monitoring
+my-docker:
+  socket: /var/run/docker.sock
+  
+# Container filtering and display options
+# Only show Carian Observatory containers (co- prefix)
+# This will automatically discover running containers

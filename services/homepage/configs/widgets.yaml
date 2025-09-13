@@ -1,0 +1,9 @@
+---
+# Widgets Configuration for v0.9.10 - simplified
+
+# Basic date/time only
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: short
+      timeStyle: short

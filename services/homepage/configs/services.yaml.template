@@ -1,0 +1,25 @@
+---
+# Services Configuration Template for v0.9.10
+# This file uses environment variable substitution
+
+# AI Platform Services
+- AI Platform:
+    - Open-WebUI Production:
+        href: https://${WEBUI_DOMAIN}
+        description: Main AI chat interface
+        icon: si-openai
+
+    - Open-WebUI Canary:
+        href: https://${CANARY_DOMAIN}
+        description: Testing environment
+        icon: si-openai
+
+    - Perplexica Search:
+        href: https://${PERPLEXICA_DOMAIN}
+        description: AI-powered search
+        icon: si-perplexity
+
+    - Authentication Portal:
+        href: https://${AUTH_DOMAIN}
+        description: User authentication
+        icon: si-authelia
