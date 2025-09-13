@@ -1,89 +1,19 @@
 ---
-# Homepage Services Configuration - Carian Observatory Platform
-# Documentation: https://gethomepage.dev/latest/services/
+# Services Configuration for v0.9.10
 
-# Core AI Services
+# AI Platform Services
 - AI Platform:
-    - Open-WebUI (Production):
-        href: https://webui.corporateseas.com
-        description: Main AI chat interface with multiple LLM providers
-        icon: openwebui.png
-        ping: http://co-open-webui-service:8080
-        widget:
-          type: openwebui
-          url: http://co-open-webui-service:8080
-          
-    - Open-WebUI (Canary):
-        href: https://webui-canary.corporateseas.com
-        description: Latest features testing environment
-        icon: openwebui.png
-        ping: http://co-open-webui-canary:8080
-        widget:
-          type: openwebui
-          url: http://co-open-webui-canary:8080
-          
-    - Perplexica:
-        href: https://perplexica.corporateseas.com
-        description: AI-powered search engine with web integration
-        icon: perplexica.png
-        ping: http://co-perplexica-service:3000
+    - Open-WebUI Production:
+        href: https://webui.yourdomain.com
+        description: Main AI chat interface
+        icon: si-openai
         
-# Authentication & Security        
-- Platform Services:
-    - Authelia:
-        href: https://auth.corporateseas.com
-        description: Authentication portal with FIDO2 support
-        icon: authelia.png
-        ping: http://host.docker.internal:9091
-        widget:
-          type: authelia
-          url: http://host.docker.internal:9091
-          
-    - SearXNG:
-        href: http://co-searxng-service:8080
-        description: Privacy-focused search engine
-        icon: searxng.png
-        ping: http://co-searxng-service:8080
-
-# System Management
-- Infrastructure:
-    - Watchtower (Production):
-        description: Automated container updates - daily schedule
-        icon: watchtower.png
-        ping: http://co-ow-watchtower-service
-        widget:
-          type: watchtower
-          
-    - Watchtower (Canary):
-        description: Automated container updates - hourly schedule
-        icon: watchtower.png
-        ping: http://co-ow-watchtower-canary
-        widget:
-          type: watchtower
-          
-    - 1Password Connect:
-        description: Enterprise secret management
-        icon: 1password.png
-        ping: http://co-1password-service:8080
+    - Open-WebUI Canary:
+        href: https://webui-canary.yourdomain.com
+        description: Testing environment
+        icon: si-openai
         
-    - Redis:
-        description: Session storage and caching
-        icon: redis.png
-        ping: http://co-authelia-redis:6379
-
-# External Services (if configured)
-- External LLM Providers:
-    - OpenAI Platform:
-        href: https://platform.openai.com
-        description: GPT models and API management
-        icon: openai.png
-        
-    - OpenRouter:
-        href: https://openrouter.ai
-        description: Unified API for multiple LLM providers
-        icon: openrouter.png
-        
-    - Anthropic Console:
-        href: https://console.anthropic.com
-        description: Claude API and usage management
-        icon: anthropic.png
+    - Perplexica Search:
+        href: https://perplexica.yourdomain.com
+        description: AI-powered search
+        icon: si-perplexity

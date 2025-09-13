@@ -1,51 +1,9 @@
 ---
-# Homepage Widgets Configuration - Carian Observatory Platform
-# Documentation: https://gethomepage.dev/latest/widgets/
+# Widgets Configuration for v0.9.10 - simplified
 
-# System resources and information widgets
-- resources:
-    backend: resources
-    expanded: true
-    cpu: true
-    memory: true
-    disk: /
-
+# Basic date/time only
 - datetime:
     text_size: xl
     format:
+      dateStyle: short
       timeStyle: short
-      dateStyle: long
-      hourCycle: h23
-
-# Docker container status
-- docker:
-    server: my-docker
-    container: co-.*  # Show all Carian Observatory containers
-
-# Optional: Search widget 
-- search:
-    provider: duckduckgo
-    target: _blank
-
-# Network and connectivity
-- glances:
-    # Uncomment and configure if Glances is available
-    # url: http://glances-host:61208
-    # username: admin
-    # password: password
-    
-# Custom widgets for platform monitoring
-# - unifi:
-#     url: http://unifi-controller:8443
-#     username: admin
-#     password: password
-
-# API status monitoring
-# - ping:
-#     host: openai.com
-#     name: OpenAI API
-
-# System logs (if log aggregation is set up)
-# - logs:
-#     file: /var/log/nginx/access.log
-#     lines: 20

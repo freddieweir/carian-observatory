@@ -1,86 +1,22 @@
 ---
-# Homepage Configuration - Carian Observatory Platform Dashboard
-# Documentation: https://gethomepage.dev/latest/
+# Homepage Configuration for v0.9.10 - Carian Observatory
+title: Carian Observatory Platform
 
-# Page title and branding
-title: Carian Observatory
-favicon: https://cdn-icons-png.flaticon.com/512/1598/1598431.png
-
-# Layout options
-layout:
-  # Dashboard layout (options: columns, category, mixed)
-  style: columns
-  # How many columns to display (1-8)
-  columns: 3
-  # Show service stats
-  stats: true
-
-# Search functionality
-search:
-  # Search provider (options: google, ddg, bing, baidu, brave, searx)
-  provider: ddg
-  # Focus search bar on page load
-  focus: false
-
-# Header configuration
-headerStyle: boxed
-statusStyle: dot
-
-# Color scheme (options: light, dark, auto)
+# Theme/appearance - using older format
+theme: dark
 color: dark
+headerStyle: boxed
 
-# Background settings (simplified)
-background:
+# Layout
+layout:
+  AI Platform:
+    style: row
+    columns: 4
 
-# Custom CSS/styling (remove conflicting theme setting)
-# theme: dark
+# Disable features that might cause issues
+disableCollapse: false
+showStats: true
+target: _blank
 
-# Language (ISO 639-1 codes)
+# Language
 language: en
-
-# Hide version footer
-hideVersion: true
-
-# Bookmarks - quick links section
-bookmarks:
-  - Developer:
-      - GitHub:
-          href: https://github.com
-          icon: github.png
-      - Stack Overflow:
-          href: https://stackoverflow.com
-          icon: stackoverflow.png
-      - Docker Hub:
-          href: https://hub.docker.com
-          icon: docker.png
-      
-  - AI Resources:
-      - OpenAI:
-          href: https://platform.openai.com
-          icon: openai.png
-      - Anthropic:
-          href: https://console.anthropic.com
-          icon: anthropic.png
-      - Ollama:
-          href: https://ollama.com
-          icon: ollama.png
-
-# Disable certain features if not needed
-features:
-  search: true
-  bookmarks: true
-  weather: false
-  logo: false
-
-# Quick search settings
-quicklaunch:
-  searchDescriptions: true
-  hideInternetSearch: false
-  showSearchSuggestions: true
-  hideVisitURL: false
-
-# Show custom links in header
-# links:
-#   - text: "Custom Link"
-#     href: "https://example.com"
-#     icon: "custom-icon.png"
