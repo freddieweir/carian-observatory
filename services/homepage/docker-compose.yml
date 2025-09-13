@@ -15,6 +15,11 @@ services:
       - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_DOMAIN:-homepage.yourdomain.com},${GENERIC_HOMEPAGE_DOMAIN:-homepage.yourdomain.com}
       - PUID=1000
       - PGID=1000
+      # Pass domain variables for potential runtime substitution
+      - WEBUI_DOMAIN=${WEBUI_DOMAIN}
+      - CANARY_DOMAIN=${CANARY_DOMAIN}
+      - PERPLEXICA_DOMAIN=${PERPLEXICA_DOMAIN}
+      - AUTH_DOMAIN=${AUTH_DOMAIN}
     networks:
       - app-network
     healthcheck:
