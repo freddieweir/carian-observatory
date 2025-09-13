@@ -29,16 +29,11 @@ statusStyle: dot
 # Color scheme (options: light, dark, auto)
 color: dark
 
-# Background settings
+# Background settings (simplified)
 background:
-  image: ""
-  blur: ""
-  saturate: ""
-  brightness: ""
-  opacity: ""
 
-# Custom CSS/styling
-theme: dark
+# Custom CSS/styling (remove conflicting theme setting)
+# theme: dark
 
 # Language (ISO 639-1 codes)
 language: en
@@ -49,26 +44,26 @@ hideVersion: true
 # Bookmarks - quick links section
 bookmarks:
   - Developer:
-    - GitHub:
-      - href: https://github.com
-      - icon: github.png
-    - Stack Overflow:
-      - href: https://stackoverflow.com
-      - icon: stackoverflow.png
-    - Docker Hub:
-      - href: https://hub.docker.com
-      - icon: docker.png
+      - GitHub:
+          href: https://github.com
+          icon: github.png
+      - Stack Overflow:
+          href: https://stackoverflow.com
+          icon: stackoverflow.png
+      - Docker Hub:
+          href: https://hub.docker.com
+          icon: docker.png
       
   - AI Resources:
-    - OpenAI:
-      - href: https://platform.openai.com
-      - icon: openai.png
-    - Anthropic:
-      - href: https://console.anthropic.com
-      - icon: anthropic.png
-    - Ollama:
-      - href: https://ollama.com
-      - icon: ollama.png
+      - OpenAI:
+          href: https://platform.openai.com
+          icon: openai.png
+      - Anthropic:
+          href: https://console.anthropic.com
+          icon: anthropic.png
+      - Ollama:
+          href: https://ollama.com
+          icon: ollama.png
 
 # Disable certain features if not needed
 features:
