@@ -1,0 +1,209 @@
+#!/bin/bash
+# =============================================================================
+# ADD HOSTS ENTRY WITH TOUCH ID AUTHENTICATION
+# =============================================================================
+# This script adds domain entries to /etc/hosts using Touch ID authentication
+# via 1Password CLI for sudo privileges
+#
+# Usage: ./add-hosts-entry.sh [domain] [ip]
+# Example: ./add-hosts-entry.sh homepage.corporateseas.com 192.168.5.28
+#
+# If no arguments provided, it will use default Carian Observatory domains
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Default configuration
+DEFAULT_IP="192.168.5.28"
+DEFAULT_DOMAIN_BASE="corporateseas.com"
+
+# Function to print colored output
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[⚠]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+# Personal scripts directory
+PERSONAL_SCRIPTS_DIR="/Users/fweir/git/internal/scripts"
+
+# Function to use personal 1Password sudo wrapper
+use_1password_sudo() {
+    local command="$1"
+    
+    if [[ -f "$PERSONAL_SCRIPTS_DIR/1password-sudo.sh" ]]; then
+        print_info "Using personal 1Password sudo wrapper..."
+        "$PERSONAL_SCRIPTS_DIR/1password-sudo.sh" "$command"
+        return $?
+    else
+        print_warning "Personal 1Password script not found. Falling back to regular sudo."
+        eval "sudo $command"
+        return $?
+    fi
+}
+
+# Function to check if 1Password CLI is available
+check_1password() {
+    if ! command -v op &> /dev/null; then
+        print_error "1Password CLI not found. Please install it first:"
+        echo "    brew install 1password-cli"
+        exit 1
+    fi
+    print_success "1Password CLI found: $(op --version)"
+}
+
+# Function to add a single hosts entry
+add_hosts_entry() {
+    local ip="$1"
+    local domain="$2"
+    
+    # Check if entry already exists
+    if grep -q "$domain" /etc/hosts; then
+        print_warning "Entry for $domain already exists in /etc/hosts:"
+        grep "$domain" /etc/hosts
+        return 0
+    fi
+    
+    print_info "Adding hosts entry: $ip $domain"
+    
+    # Use personal 1Password sudo wrapper for authentication
+    if use_1password_sudo "echo '$ip $domain' | tee -a /etc/hosts"; then
+        print_success "Successfully added: $ip $domain"
+        return 0
+    else
+        print_error "Failed to add hosts entry"
+        return 1
+    fi
+}
+
+# Function to verify hosts entry
+verify_hosts_entry() {
+    local domain="$1"
+    
+    if grep -q "$domain" /etc/hosts; then
+        print_success "Verified: $(grep "$domain" /etc/hosts)"
+        return 0
+    else
+        print_error "Entry not found for $domain"
+        return 1
+    fi
+}
+
+# Function to add all Carian Observatory service domains
+add_carian_observatory_domains() {
+    local ip="${1:-$DEFAULT_IP}"
+    local base_domain="${2:-$DEFAULT_DOMAIN_BASE}"
+    
+    print_info "Adding Carian Observatory domains to /etc/hosts..."
+    echo -e "${BLUE}Base Domain:${NC} $base_domain"
+    echo -e "${BLUE}IP Address:${NC} $ip"
+    echo ""
+    
+    # List of services to add
+    local services=(
+        "auth"
+        "webui"
+        "perplexica"
+        "homepage"
+        "webui-canary"
+    )
+    
+    # Add each service domain
+    for service in "${services[@]}"; do
+        add_hosts_entry "$ip" "${service}.${base_domain}"
+    done
+}
+
+# Function to enable Touch ID for sudo (one-time setup)
+setup_touchid_sudo() {
+    print_info "Checking Touch ID configuration for sudo..."
+    
+    # Check if Touch ID is already enabled for sudo
+    if grep -q "pam_tid.so" /etc/pam.d/sudo; then
+        print_success "Touch ID is already enabled for sudo"
+        return 0
+    fi
+    
+    print_warning "Touch ID is not enabled for sudo. Would you like to enable it? (y/n)"
+    read -r response
+    
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        print_info "Enabling Touch ID for sudo..."
+        
+        # Create a backup of the sudo PAM file
+        sudo cp /etc/pam.d/sudo /etc/pam.d/sudo.backup
+        
+        # Add Touch ID to sudo PAM configuration
+        sudo sed -i '' '2i\
+auth       sufficient     pam_tid.so
+' /etc/pam.d/sudo
+        
+        print_success "Touch ID enabled for sudo"
+        print_info "You can now use Touch ID for sudo commands"
+    fi
+}
+
+# Main execution
+main() {
+    echo -e "${BLUE}=== Carian Observatory Hosts Entry Manager ===${NC}"
+    echo ""
+    
+    # Check for 1Password CLI
+    check_1password
+    
+    # Setup Touch ID for sudo if needed
+    setup_touchid_sudo
+    
+    # Handle command line arguments
+    if [[ $# -eq 2 ]]; then
+        # Specific domain and IP provided
+        add_hosts_entry "$2" "$1"
+        verify_hosts_entry "$1"
+    elif [[ $# -eq 1 ]]; then
+        # Just domain provided, use default IP
+        add_hosts_entry "$DEFAULT_IP" "$1"
+        verify_hosts_entry "$1"
+    else
+        # No arguments, add all Carian Observatory domains
+        print_warning "No specific domain provided. Add all Carian Observatory domains? (y/n)"
+        read -r response
+        
+        if [[ "$response" =~ ^[Yy]$ ]]; then
+            add_carian_observatory_domains
+            
+            echo ""
+            print_success "All Carian Observatory domains added!"
+            echo -e "${BLUE}You can now access:${NC}"
+            echo "  • https://auth.$DEFAULT_DOMAIN_BASE"
+            echo "  • https://webui.$DEFAULT_DOMAIN_BASE"
+            echo "  • https://perplexica.$DEFAULT_DOMAIN_BASE"
+            echo "  • https://homepage.$DEFAULT_DOMAIN_BASE"
+            echo "  • https://webui-canary.$DEFAULT_DOMAIN_BASE"
+        else
+            echo ""
+            print_info "Usage examples:"
+            echo "  Add specific domain:     $0 homepage.corporateseas.com"
+            echo "  Add with custom IP:      $0 homepage.corporateseas.com 192.168.1.100"
+            echo "  Add all CO domains:      $0"
+        fi
+    fi
+}
+
+# Run main function
+main "$@"

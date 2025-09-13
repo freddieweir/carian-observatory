@@ -7,7 +7,7 @@ services:
     container_name: ${USER_PREFIX}-homepage-service
     restart: unless-stopped
     volumes:
-      - ./configs:/app/config:ro
+      - ./configs:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_DOMAIN:-homepage.yourdomain.com},${GENERIC_HOMEPAGE_DOMAIN:-homepage.yourdomain.com}
