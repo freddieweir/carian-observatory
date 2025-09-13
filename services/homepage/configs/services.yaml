@@ -5,7 +5,7 @@
 # Core AI Services
 - AI Platform:
     - Open-WebUI (Production):
-        href: https://webui.yourdomain.com
+        href: https://webui.corporateseas.com
         description: Main AI chat interface with multiple LLM providers
         icon: openwebui.png
         ping: http://co-open-webui-service:8080
@@ -14,7 +14,7 @@
           url: http://co-open-webui-service:8080
           
     - Open-WebUI (Canary):
-        href: https://webui-canary.yourdomain.com
+        href: https://webui-canary.corporateseas.com
         description: Latest features testing environment
         icon: openwebui.png
         ping: http://co-open-webui-canary:8080
@@ -23,7 +23,7 @@
           url: http://co-open-webui-canary:8080
           
     - Perplexica:
-        href: https://perplexica.yourdomain.com
+        href: https://perplexica.corporateseas.com
         description: AI-powered search engine with web integration
         icon: perplexica.png
         ping: http://co-perplexica-service:3000
@@ -31,7 +31,7 @@
 # Authentication & Security        
 - Platform Services:
     - Authelia:
-        href: https://auth.yourdomain.com
+        href: https://auth.corporateseas.com
         description: Authentication portal with FIDO2 support
         icon: authelia.png
         ping: http://host.docker.internal:9091
