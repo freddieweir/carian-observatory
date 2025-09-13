@@ -2,10 +2,9 @@
 # Homepage Configuration for v0.9.10 - Carian Observatory
 title: Carian Observatory Platform
 
-# Theme/appearance - using older format
+# Theme/appearance - simplified configuration
 theme: dark
-color: dark
-headerStyle: boxed
+headerStyle: clean
 
 # Layout
 layout:
