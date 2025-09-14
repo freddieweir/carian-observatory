@@ -1,0 +1,42 @@
+---
+# Widgets Configuration for Carian Observatory - Template Version
+
+# Date and Time
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: full
+      timeStyle: short
+      hourCycle: h12
+
+# Calendar Widget
+- calendar:
+    firstDayInWeek: sunday
+    view: monthly
+    maxEvents: 10
+    showTime: true
+
+# System Resources (Host System)
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+    cputemp: true
+    uptime: true
+    label: "System Resources"
+
+# Search Widget - Kagi (Privacy-focused search)
+- search:
+    provider: custom
+    url: https://kagi.com/search?q=
+    target: _blank
+    focus: true
+    showSearchSuggestions: false
+
+# Weather Widget (San Francisco by default)
+- openmeteo:
+    label: Local Weather
+    latitude: 37.7749
+    longitude: -122.4194
+    units: imperial
+    cache: 5
