@@ -1,21 +1,29 @@
 ---
-# Homepage Configuration for v0.9.10 - Carian Observatory
+# Homepage Configuration - Carian Observatory
 title: Carian Observatory Platform
 
 # Theme/appearance - simplified configuration
 theme: dark
 headerStyle: clean
 
+# Global link behavior - force same window for PWA
+target: _self
+
 # Layout
 layout:
   AI Platform:
     style: row
     columns: 4
+  Infrastructure:
+    style: row
+    columns: 3
+  Documentation:
+    style: row
+    columns: 3
 
 # Disable features that might cause issues
 disableCollapse: false
 showStats: true
-target: _blank
 
 # Language
 language: en

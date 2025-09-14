@@ -6,7 +6,7 @@
 # via 1Password CLI for sudo privileges
 #
 # Usage: ./add-hosts-entry.sh [domain] [ip]
-# Example: ./add-hosts-entry.sh homepage.corporateseas.com 192.168.5.28
+# Example: ./add-hosts-entry.sh homepage.yourdomain.com 192.168.1.100
 #
 # If no arguments provided, it will use default Carian Observatory domains
 
@@ -20,8 +20,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default configuration
-DEFAULT_IP="192.168.5.28"
-DEFAULT_DOMAIN_BASE="corporateseas.com"
+DEFAULT_IP="192.168.1.100"
+DEFAULT_DOMAIN_BASE="yourdomain.com"
 
 # Function to print colored output
 print_info() {
@@ -41,7 +41,7 @@ print_error() {
 }
 
 # Personal scripts directory
-PERSONAL_SCRIPTS_DIR="/Users/fweir/git/internal/scripts"
+PERSONAL_SCRIPTS_DIR="/path/to/personal/scripts"
 
 # Function to use personal 1Password sudo wrapper
 use_1password_sudo() {
@@ -198,8 +198,8 @@ main() {
         else
             echo ""
             print_info "Usage examples:"
-            echo "  Add specific domain:     $0 homepage.corporateseas.com"
-            echo "  Add with custom IP:      $0 homepage.corporateseas.com 192.168.1.100"
+            echo "  Add specific domain:     $0 homepage.yourdomain.com"
+            echo "  Add with custom IP:      $0 homepage.yourdomain.com 192.168.1.100"
             echo "  Add all CO domains:      $0"
         fi
     fi
