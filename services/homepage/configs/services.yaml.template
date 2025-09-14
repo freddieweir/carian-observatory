@@ -1,9 +1,10 @@
 ---
-# Services Configuration Template for v0.9.10
-# This file uses environment variable substitution
-
-# AI Platform Services
 - AI Platform:
+    - Authentication Portal:
+        href: https://${AUTH_DOMAIN}
+        description: Sign in first for access
+        icon: si-authelia
+
     - Open-WebUI Production:
         href: https://${WEBUI_DOMAIN}
         description: Main AI chat interface
@@ -19,7 +20,57 @@
         description: AI-powered search
         icon: si-perplexity
 
-    - Authentication Portal:
-        href: https://${AUTH_DOMAIN}
-        description: User authentication
+- Infrastructure:
+    - Homepage Dashboard:
+        href: https://${HOMEPAGE_DOMAIN}
+        description: This dashboard
+        icon: si-homeassistant
+
+    - Watchtower:
+        href: https://containrrr.dev/watchtower/
+        description: Automatic container updates
+        icon: si-docker
+        widget:
+          type: watchtower
+          url: http://localhost:8080
+          key: ${WATCHTOWER_API_KEY:-your_api_key_here}
+
+    - Nginx Proxy Manager:
+        href: https://nginxproxymanager.com/
+        description: Reverse proxy management
+        icon: si-nginx
+        widget:
+          type: nginxproxymanager
+          url: http://localhost:81
+          username: ${NPM_USERNAME:-admin@yourdomain.com}
+          password: ${NPM_PASSWORD:-changeme}
+
+    - Tailscale:
+        href: https://tailscale.com/
+        description: VPN mesh network
+        icon: si-tailscale
+        widget:
+          type: tailscale
+          deviceid: ${TAILSCALE_DEVICE_ID:-your_device_id}
+          key: ${TAILSCALE_API_KEY:-your_api_key}
+
+- Documentation:
+    - Authelia Docs:
+        href: https://www.authelia.com/
+        description: Authentication system documentation
         icon: si-authelia
+
+    - Homepage Docs:
+        href: https://gethomepage.dev/
+        description: Dashboard documentation
+        icon: si-homeassistant
+
+    - Docker Hub:
+        href: https://hub.docker.com/
+        description: Container registry
+        icon: si-docker
+
+    - ProtonDB:
+        href: https://www.protondb.com/
+        description: Gaming compatibility database
+        icon: si-steam
