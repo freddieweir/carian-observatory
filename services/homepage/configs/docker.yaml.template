@@ -1,0 +1,6 @@
+---
+# Docker monitoring disabled due to macOS Docker Desktop socket permissions
+# Uncomment and configure if you have Docker socket access working:
+
+# my-docker:
+#   socket: /var/run/docker.sock

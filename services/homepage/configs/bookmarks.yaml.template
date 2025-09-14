@@ -1,0 +1,27 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/bookmarks
+
+- Developer:
+    - Github:
+        - abbr: GH
+          href: https://github.com/
+          target: _blank
+
+- Social:
+    - Reddit:
+        - abbr: RE
+          href: https://reddit.com/
+          target: _blank
+
+- Entertainment:
+    - YouTube:
+        - abbr: YT
+          href: https://youtube.com/
+          target: _blank
+
+- Gaming:
+    - ProtonDB:
+        - abbr: PDB
+          href: https://www.protondb.com/
+          target: _blank
