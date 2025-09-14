@@ -92,6 +92,10 @@ nginx/*.conf
 !**/scripts/*.sh.template
 !**/scripts/create-scripts.sh
 
+# Infrastructure scripts with personal domain information
+**/infrastructure/add-hosts-entry.sh
+!**/infrastructure/add-hosts-entry.sh.template
+
 # Generated configuration files with real domains (use templates instead)
 **/configs/services.yaml
 !**/configs/services.yaml.template
