@@ -8,9 +8,11 @@ A comprehensive AI infrastructure platform featuring enterprise security, modern
 ## Quick Start
 
 ```bash
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your settings
+# Generate all configuration files from templates
+./create-all-from-templates.sh
+
+# Edit .env with your settings (generated from template)
+vim .env
 
 # Start all services
 docker compose up -d
@@ -58,6 +60,71 @@ include:
   - path: services/open-webui/docker-compose.canary.yml
 ```
 Access at `http://localhost:8081`
+
+## 📝 Template System
+
+Carian Observatory uses a secure template system that separates configuration templates (safe to commit) from generated files with real domains (gitignored for security).
+
+### Structure
+```
+carian-observatory/
+├── templates/              # Safe to commit - generic domains only
+│   ├── .env.template       # Environment variables with placeholders
+│   ├── services/           # Mirrors actual service structure
+│   │   ├── homepage/
+│   │   │   ├── configs/    # *.yaml.template files
+│   │   │   └── scripts/    # *.sh.template files
+│   │   ├── authelia/
+│   │   ├── nginx/
+│   │   └── [other-services]/
+│   └── scripts/
+│       └── infrastructure/ # System management script templates
+├── services/               # Generated files (gitignored)
+│   ├── homepage/
+│   │   ├── configs/        # *.yaml files with real domains
+│   │   └── scripts/        # *.sh files with real domains
+│   └── [other-services]/
+└── create-all-from-templates.sh  # Master generation script
+```
+
+### Usage
+
+1. **Generate all files from templates:**
+   ```bash
+   ./create-all-from-templates.sh
+   ```
+
+2. **Edit templates (safe to commit):**
+   ```bash
+   # Edit any .template file in templates/ directory
+   vim templates/services/homepage/configs/settings.yaml.template
+
+   # Regenerate working files
+   ./create-all-from-templates.sh
+   ```
+
+3. **Add new service templates:**
+   ```bash
+   # Create service template directory
+   mkdir -p templates/services/newservice/{configs,scripts}
+
+   # Add templates with yourdomain.com placeholders
+   echo "domain: yourdomain.com" > templates/services/newservice/configs/config.yaml.template
+
+   # Update master script to process new templates
+   vim create-all-from-templates.sh
+   ```
+
+### Security Benefits
+- ✅ **Zero domain exposure risk**: Only generic `yourdomain.com` in git history
+- ✅ **Automatic gitignore**: Generated files are directory-level excluded
+- ✅ **Template versioning**: Safe collaboration on configuration changes
+- ✅ **1Password integration**: Handles encrypted environment variables seamlessly
+
+### Template Variables
+Templates support two processing modes:
+- **Simple substitution**: `yourdomain.com` → your actual domain
+- **Environment variables**: `${VARIABLE_NAME}` → value from `.env` file
 
 ## SSL Certificates
 

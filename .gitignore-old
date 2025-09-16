@@ -1,12 +1,10 @@
 # =============================================================================
-# SIMPLIFIED TEMPLATE-BASED .GITIGNORE FOR AI INFRASTRUCTURE PLATFORM
+# PORTFOLIO-READY .GITIGNORE FOR AI INFRASTRUCTURE PLATFORM
 # =============================================================================
-# Clean directory-level exclusions with templates/ directory for safe commits
-#
-# NEW STRUCTURE:
-# - templates/ directory contains all .template files (safe to commit)
-# - Generated files are directory-level gitignored (never committed)
-# - Master script ./create-all-from-templates.sh generates everything
+# Enterprise-grade security patterns for public repositories
+# This .gitignore ensures zero sensitive data exposure for portfolio presentation
+# 
+# Replace your existing .gitignore with this file after migration completion
 
 # =============================================================================
 # CRITICAL SECURITY - SSL/TLS CERTIFICATES AND PRIVATE KEYS
@@ -61,36 +59,67 @@ auth_state*
 token_cache*
 
 # =============================================================================
-# NEW TEMPLATE SYSTEM - DIRECTORY-LEVEL EXCLUSIONS
+# CRITICAL SECURITY - CONFIGURATION WITH SECRETS
 # =============================================================================
-# Environment files (use templates/.env.template instead)
+# Only allow template files, never files with actual secrets
 .env
-.env.*
-!.env.template
-!.env.example
+.env.local
+.env.production
+.env.development
+.env.private
+.env.canary
+.env.canary-complete
+.env.staging
 
-# Generated service configurations (use templates/ instead)
-services/*/configs/*
-!services/*/configs/.gitkeep
-!services/*/docker-compose.yml
+# Allow templates but not processed configs
+**/configuration.yml
+!**/configuration.yml.template
+!**/configuration.yml.example
 
-# Generated scripts (use templates/ instead)
-services/*/scripts/*
-!services/*/scripts/.gitkeep
+# Authelia configurations (contain secrets)
+**/authelia/
+**/authelia-canary/
 
-# Generated scripts directory (use templates/scripts/ instead)
-scripts/*
-!scripts/.gitkeep
+# Sanitize
+**/sanitize-repository.sh
 
-# Allow templates directory and all contents (SAFE TO COMMIT)
-!templates/
-!templates/**/*
+# Generated nginx configurations (use templates instead)
+nginx/*.conf
+!nginx/*.conf.template
 
-# Allow master generation script
-!create-all-from-templates.sh
+# Generated scripts with real domains (use templates instead)
+**/scripts/*.sh
+!**/scripts/*.sh.template
+!**/scripts/create-scripts.sh
+
+# Infrastructure scripts with personal domain information
+**/infrastructure/add-hosts-entry.sh
+!**/infrastructure/add-hosts-entry.sh.template
+
+# Homepage configuration files with real domains/sensitive data (use templates instead)
+# Block all generated YAML configs but allow templates
+services/homepage/configs/*.yaml
+!services/homepage/configs/*.yaml.template
+
+# PII-sensitive templates (service structure reveals personal organization)
+services/homepage/configs/services.yaml.template
+**/configs/services.yaml.template
+**/configs/services.yaml
+**/configs/widgets.yaml
+!**/configs/widgets.yaml.template
+**/configs/settings.yaml
+!**/configs/settings.yaml.template
+**/configs/bookmarks.yaml
+!**/configs/bookmarks.yaml.template
+**/configs/docker.yaml
+!**/configs/docker.yaml.template
+**/configs/kubernetes.yaml
+!**/configs/kubernetes.yaml.template
+**/configs/proxmox.yaml
+!**/configs/proxmox.yaml.template
 
 # =============================================================================
-# SECURITY - APPLICATION DATA AND RUNTIME FILES
+# SECURITY - APPLICATION DATA AND RUNTIME FILES  
 # =============================================================================
 # Application data directories
 data/
@@ -318,15 +347,17 @@ container-data/
 !Dockerfile*
 !docker-compose*.yml
 !Makefile
+!*.template
+!*.example
+!*.sample
 !scripts/
 !docs/
 
-# Allow template directory and all contents
-!templates/
-!templates/**/*
-
 # Allow specific configuration templates
-!templates/.env.template
+!.env.template
+!.env.example
+!**/configuration.yml.template
+!**/users_database.yml.example
 
 # =============================================================================
 # 1PASSWORD INTEGRATION SECURITY
@@ -348,12 +379,16 @@ container-data/
 .env.injected
 
 # =============================================================================
-# PORTFOLIO-SPECIFIC EXCLUSIONS
+# PORTFOLIO-SPECIFIC EXCLUSIONS  
 # =============================================================================
 # Personal information patterns (customize as needed)
 *personal*
 
-# Note: All scripts now excluded via scripts/* pattern above
+# Migration scripts (contain legacy personal info)
+scripts/migration/
+
+# Sanitization script (contains personal domain mappings)
+scripts/sanitize-repository.sh
 
 # Private planning and notes (OPSEC)
 todos/
@@ -420,24 +455,9 @@ _site/
 *database_url*
 *db_url*
 
+# This .gitignore provides comprehensive security for public repositories
+# Review and customize patterns based on your specific needs
+# Never commit this file with real domain names or personal identifiers
 # Claude IDE settings (personal)
 .claude/
-
-# =============================================================================
-# TEMPLATE SYSTEM SUMMARY
-# =============================================================================
-# COMMIT TO GIT:
-# - templates/ directory and all contents
-# - README.md with generic yourdomain.com examples
-# - docker-compose.yml files
-# - create-all-from-templates.sh script
-#
-# NEVER COMMIT TO GIT:
-# - Generated files in services/*/configs/ and services/*/scripts/
-# - .env file with real secrets
-# - Any file with real domain names or personal information
-#
-# WORKFLOW:
-# 1. Edit templates in templates/ directory
-# 2. Run ./create-all-from-templates.sh to generate working files
-# 3. Only commit template changes to git
+.claude/

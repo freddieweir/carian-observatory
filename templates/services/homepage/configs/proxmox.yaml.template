@@ -1,0 +1,5 @@
+---
+# Proxmox integration configuration
+# url: https://proxmox.yourdomain.com:8006
+# token: ${PROXMOX_TOKEN:-username@pam!TokenID}
+# secret: ${PROXMOX_SECRET:-your_secret_here}
