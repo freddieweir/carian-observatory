@@ -18,7 +18,7 @@ DAYS=365
 COUNTRY="US"
 STATE="CA"
 CITY="San Francisco"
-ORG="Corporate Seas Local"
+ORG="Local Development"
 OU="IT Department"
 
 # Domain list
@@ -34,7 +34,7 @@ DOMAINS=(
     "auth-status-m4.yourdomain.com"
 )
 
-echo -e "${BLUE}🔐 SSL Certificate Generation for Corporate Seas Local Setup${NC}"
+echo -e "${BLUE}🔐 SSL Certificate Generation for Local Development Setup${NC}"
 echo -e "${BLUE}============================================================${NC}"
 
 # Create SSL directory
