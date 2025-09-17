@@ -12,7 +12,7 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 wildcard.yourdomain.com"
-    echo "  $0 webui-m4.yourdomain.com /tmp/certs"
+    echo "  $0 webui.yourdomain.com /tmp/certs"
     echo ""
     echo "Available certificates:"
     op item list --vault="$VAULT" | grep "SSL:" | awk '{print $2}' | sed 's/SSL:/  /'

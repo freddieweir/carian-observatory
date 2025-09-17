@@ -24,14 +24,10 @@ OU="IT Department"
 # Domain list
 DOMAINS=(
     "webui.yourdomain.com"
-    "webui-m4.yourdomain.com"
-    "webui-m2.yourdomain.com"
+    "webui-canary.yourdomain.com"
     "perplexica.yourdomain.com"
-    "perplexica-m4.yourdomain.com"
-    "perplexica-m2.yourdomain.com"
-    "webui-m4-canary.yourdomain.com"
-    "auth-m4.yourdomain.com"
-    "auth-status-m4.yourdomain.com"
+    "auth.yourdomain.com"
+    "homepage.yourdomain.com"
 )
 
 echo -e "${BLUE}🔐 SSL Certificate Generation for Local Development Setup${NC}"

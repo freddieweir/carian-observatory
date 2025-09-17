@@ -445,9 +445,6 @@ step_sanitize_configs() {
         sed -i.tmp \
             -e 's/yourdomain\.com/yourdomain.com/g' \
             -e 's/testdomain\.com/test.yourdomain.com/g' \
-            -e 's/webui-m4\./webui./g' \
-            -e 's/perplexica-m4\./perplexica./g' \
-            -e 's/auth-m4\./auth./g' \
             "$nginx_config"
         
         rm -f "$nginx_config.tmp"

@@ -118,7 +118,7 @@ main() {
             DOMAINS=(
                 "webui.yourdomain.com"
                 "perplexica.yourdomain.com"
-                "auth-m4.yourdomain.com"
+                "auth.yourdomain.com"
             )
             ;;
         "canary")

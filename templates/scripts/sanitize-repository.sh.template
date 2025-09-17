@@ -52,9 +52,9 @@ FILES_TO_SANITIZE=(
 # Domain replacements - using simple arrays to avoid bash 4 requirement
 REPLACEMENTS=(
     "yourdomain.com:yourdomain.com"
-    "auth-m4.yourdomain.com:auth.yourdomain.com"
-    "webui-m4.yourdomain.com:webui.yourdomain.com"
-    "perplexica-m4.yourdomain.com:perplexica.yourdomain.com"
+    "old-auth.yourdomain.com:auth.yourdomain.com"
+    "old-webui.yourdomain.com:webui.yourdomain.com"
+    "old-perplexica.yourdomain.com:perplexica.yourdomain.com"
     "webui-canary.yourdomain.com:webui-canary.yourdomain.com"
     "auth-test.yourdomain.com:auth-test.yourdomain.com"
     "webui-test.yourdomain.com:webui-test.yourdomain.com"
