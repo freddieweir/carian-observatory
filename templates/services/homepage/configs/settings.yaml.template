@@ -19,7 +19,7 @@ layout:
     columns: 3
   Documentation:
     style: row
-    columns: 3
+    columns: 4
 
 # Disable features that might cause issues
 disableCollapse: false
