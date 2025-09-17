@@ -1,0 +1,294 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Initialize Portfolio Security Migration
+# =============================================================================
+# Simple setup script to prepare for the portfolio security migration.
+# This script checks prerequisites and guides the user through the initial setup.
+#
+# Usage:
+#   ./scripts/init-portfolio-migration.sh
+# =============================================================================
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m' # No Color
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+log() {
+    echo -e "$*"
+}
+
+log_info() {
+    log "${BLUE}[INFO]${NC} $*"
+}
+
+log_success() {
+    log "${GREEN}[SUCCESS]${NC} $*"
+}
+
+log_warning() {
+    log "${YELLOW}[WARNING]${NC} $*"
+}
+
+log_error() {
+    log "${RED}[ERROR]${NC} $*"
+}
+
+log_step() {
+    log "${PURPLE}[STEP]${NC} $*"
+}
+
+confirm_action() {
+    local message="$1"
+    local default="${2:-n}"
+    
+    while true; do
+        if [[ "$default" == "y" ]]; then
+            read -p "$message (Y/n): " response
+            response=${response:-y}
+        else
+            read -p "$message (y/N): " response
+            response=${response:-n}
+        fi
+        
+        case "$response" in
+            [Yy]|[Yy][Ee][Ss]) return 0 ;;
+            [Nn]|[Nn][Oo]) return 1 ;;
+            *) echo "Please answer yes or no." ;;
+        esac
+    done
+}
+
+show_header() {
+    echo -e "${WHITE}"
+    cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                     AI INFRASTRUCTURE PORTFOLIO MIGRATION SETUP                     ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${NC}"
+    
+    echo -e "${CYAN}This script will prepare your AI infrastructure project for portfolio presentation by:${NC}"
+    echo "• Removing all personal information and hard-coded secrets"
+    echo "• Integrating with 1Password for enterprise secret management" 
+    echo "• Creating secure configuration templates"
+    echo "• Implementing portfolio-ready documentation"
+    echo
+    echo -e "${YELLOW}⚠️  IMPORTANT: This process will modify your project files. Ensure you have backups!${NC}"
+    echo
+}
+
+check_prerequisites() {
+    log_step "Checking prerequisites"
+    
+    local missing_deps=()
+    
+    # Check 1Password CLI
+    if ! command -v op >/dev/null 2>&1; then
+        missing_deps+=("1Password CLI")
+        log_error "1Password CLI not found"
+        log_info "Install from: https://1password.com/downloads/command-line/"
+    else
+        log_success "1Password CLI found: $(op --version)"
+    fi
+    
+    # Check Docker
+    if ! command -v docker >/dev/null 2>&1; then
+        missing_deps+=("Docker")
+        log_error "Docker not found"
+    else
+        log_success "Docker found: $(docker --version)"
+    fi
+    
+    # Check Docker Compose
+    if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+        missing_deps+=("Docker Compose")
+        log_error "Docker Compose not found"
+    else
+        log_success "Docker Compose found"
+    fi
+    
+    # Check jq for JSON processing
+    if ! command -v jq >/dev/null 2>&1; then
+        missing_deps+=("jq")
+        log_error "jq not found (needed for JSON processing)"
+        log_info "Install with: brew install jq (macOS) or apt-get install jq (Linux)"
+    else
+        log_success "jq found: $(jq --version)"
+    fi
+    
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        log_error "Missing required dependencies:"
+        printf "  - %s\n" "${missing_deps[@]}"
+        echo
+        log_info "Please install the missing dependencies and run this script again."
+        return 1
+    fi
+    
+    log_success "All prerequisites satisfied"
+    return 0
+}
+
+check_1password_auth() {
+    log_step "Checking 1Password authentication"
+    
+    if ! op account list >/dev/null 2>&1; then
+        log_error "1Password CLI not signed in"
+        log_info "Please sign in to 1Password:"
+        echo "  op signin"
+        echo
+        return 1
+    fi
+    
+    local account_info=$(op account list --format=json | jq -r '.[0] | "\(.shorthand) (\(.email))"' 2>/dev/null || echo "Unknown")
+    log_success "1Password authenticated: $account_info"
+    return 0
+}
+
+analyze_current_state() {
+    log_step "Analyzing current project state"
+    
+    # Count sensitive files
+    local ssl_count=$(find "$PROJECT_ROOT" \( -name "*.crt" -o -name "*.key" -o -name "*.pem" \) \
+                                          -not -path "*/backup/*" -not -path "*/.git/*" | wc -l)
+    local db_count=$(find "$PROJECT_ROOT" -name "*.sqlite*" \
+                                         -not -path "*/backup/*" -not -path "*/.git/*" | wc -l)
+    
+    echo
+    log_info "Current project analysis:"
+    echo "  📜 SSL Certificates/Keys: $ssl_count files"
+    echo "  🗄️  Database files: $db_count files"
+    
+    if [[ -f "$PROJECT_ROOT/.env" ]]; then
+        local secret_count=$(grep -c "SECRET\|KEY.*=" "$PROJECT_ROOT/.env" 2>/dev/null || echo 0)
+        echo "  🔐 Configuration secrets: $secret_count found in .env"
+    fi
+    
+    # Check for personal information
+    local personal_files=$(grep -r "corporateseas\|canaryseas\|example\|username\|fweir" "$PROJECT_ROOT" \
+                                  --include="*.yml" --include="*.conf" --include="*.md" --include="*.sh" \
+                                  --exclude-dir=backup --exclude-dir=.git 2>/dev/null | wc -l)
+    echo "  👤 Files with personal info: $personal_files files"
+    echo
+}
+
+create_migration_config() {
+    log_step "Creating migration configuration"
+    
+    cat > "$PROJECT_ROOT/.migration-config" << EOF
+# Portfolio Security Migration Configuration
+# Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+MIGRATION_VERSION=1.0
+PROJECT_NAME=ai-infrastructure-platform
+VAULT_NAME=AI-Infrastructure-Portfolio
+BACKUP_RETENTION_DAYS=30
+
+# User preferences
+SKIP_CONFIRMATION=false
+AUTO_COMMIT=false
+VERBOSE_LOGGING=true
+EOF
+    
+    log_success "Migration configuration created"
+}
+
+show_migration_plan() {
+    echo
+    log_step "Migration Plan Overview"
+    echo
+    echo -e "${WHITE}The migration will execute these steps in order:${NC}"
+    echo "  1. ✅ Pre-flight checks and setup"
+    echo "  2. 💾 Create full project backup"
+    echo "  3. 📋 Inventory current secrets and files"
+    echo "  4. 🔧 Setup 1Password vault structure"
+    echo "  5. 📜 Store SSL certificates in 1Password"
+    echo "  6. 🔐 Store configuration secrets"
+    echo "  7. 🗄️  Store user databases and auth data"
+    echo "  8. ✅ Verify all data in 1Password"
+    echo "  9. 📄 Create secure configuration templates"
+    echo " 10. 🧹 Remove personal info and use placeholders"
+    echo " 11. 🔧 Update scripts for 1Password integration"
+    echo " 12. 🗑️  Remove sensitive files from filesystem"
+    echo " 13. 📚 Update docs for portfolio presentation"
+    echo " 14. ✅ Final security verification"
+    echo
+    echo -e "${GREEN}✨ Result: Portfolio-ready project with enterprise security practices${NC}"
+    echo
+}
+
+main() {
+    show_header
+    
+    # Check prerequisites
+    if ! check_prerequisites; then
+        log_error "Setup failed due to missing prerequisites"
+        exit 1
+    fi
+    
+    echo
+    
+    # Check 1Password authentication
+    if ! check_1password_auth; then
+        log_error "Setup failed due to 1Password authentication issues"
+        exit 1
+    fi
+    
+    echo
+    
+    # Analyze current state
+    analyze_current_state
+    
+    # Show migration plan
+    show_migration_plan
+    
+    # Create migration config
+    create_migration_config
+    
+    # Final confirmation
+    echo -e "${YELLOW}⚠️  This migration will:${NC}"
+    echo "   • Modify configuration files"
+    echo "   • Store sensitive data in 1Password"
+    echo "   • Remove personal information" 
+    echo "   • Delete sensitive files from the filesystem"
+    echo
+    
+    if ! confirm_action "Are you ready to proceed with the portfolio migration?"; then
+        log_info "Migration cancelled by user"
+        echo "You can run this script again when ready."
+        exit 0
+    fi
+    
+    echo
+    log_success "Setup completed! Ready to begin migration."
+    echo
+    echo -e "${WHITE}Next steps:${NC}"
+    echo "1. Run the main migration script:"
+    echo "   ${CYAN}./scripts/portfolio-security-migration.sh${NC}"
+    echo
+    echo "2. Or start with a specific step:"
+    echo "   ${CYAN}./scripts/portfolio-security-migration.sh --step store_ssl_certs${NC}"
+    echo
+    echo "3. Resume if interrupted:"
+    echo "   ${CYAN}./scripts/portfolio-security-migration.sh --resume${NC}"
+    echo
+    echo "4. Verify current state:"
+    echo "   ${CYAN}./scripts/portfolio-security-migration.sh --verify${NC}"
+    echo
+    echo -e "${GREEN}🚀 Ready to transform your project for portfolio presentation!${NC}"
+}
+
+# Run main function if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# get-authelia-otc.sh - Fetch the most recent OTC from Authelia's notification file
+# This script retrieves the One-Time Code that Authelia generates for passkey registration
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration - check both possible locations
+NOTIFICATION_FILE_1="services/authelia/data/notification.txt"
+NOTIFICATION_FILE_2="configs/authelia/notification.txt"
+NOTIFICATION_FILE=""
+
+# Find which notification file exists
+if [ -f "$NOTIFICATION_FILE_1" ]; then
+    NOTIFICATION_FILE="$NOTIFICATION_FILE_1"
+elif [ -f "$NOTIFICATION_FILE_2" ]; then
+    NOTIFICATION_FILE="$NOTIFICATION_FILE_2"
+else
+    # Try to find it in the container
+    echo -e "${YELLOW}⚠️  Checking Authelia container for notification file...${NC}"
+
+    # Get the notification content directly from the container
+    CONTAINER_NAME="co-authelia-service"
+    if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+        # Try alternate name
+        CONTAINER_NAME="authelia"
+        if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+            echo -e "${RED}❌ Authelia container not running${NC}"
+            echo -e "${YELLOW}   Start Authelia with: docker compose up -d authelia${NC}"
+            exit 1
+        fi
+    fi
+
+    # Copy notification file from container
+    docker cp "${CONTAINER_NAME}:/data/notification.txt" "/tmp/authelia_notification.txt" 2>/dev/null || {
+        echo -e "${RED}❌ No notification file found${NC}"
+        echo -e "${YELLOW}   Make sure you've initiated a passkey registration in Authelia${NC}"
+        exit 1
+    }
+    NOTIFICATION_FILE="/tmp/authelia_notification.txt"
+fi
+
+echo -e "${BLUE}🔍 Searching for OTC in Authelia notifications...${NC}"
+
+# Extract the most recent OTC (6-8 digit code)
+# Look for patterns like "One-Time Code: 123456" or "code is 123456"
+OTC=$(grep -oE '(code|Code|OTC)[^0-9]*([0-9]{6,8})' "$NOTIFICATION_FILE" 2>/dev/null | grep -oE '[0-9]{6,8}' | tail -1)
+
+# If not found, try alternative patterns
+if [ -z "$OTC" ]; then
+    # Look for standalone 6-8 digit numbers in recent lines
+    OTC=$(tail -20 "$NOTIFICATION_FILE" 2>/dev/null | grep -oE '\b[0-9]{6,8}\b' | tail -1)
+fi
+
+# Check if we found an OTC
+if [ -z "$OTC" ]; then
+    echo -e "${RED}❌ No OTC found in notification file${NC}"
+    echo -e "${YELLOW}   Tips:${NC}"
+    echo -e "${YELLOW}   1. Make sure you've initiated passkey/2FA registration${NC}"
+    echo -e "${YELLOW}   2. Check the notification file: $NOTIFICATION_FILE${NC}"
+    echo -e "${YELLOW}   3. The OTC might have expired (usually valid for 5 minutes)${NC}"
+
+    # Show last few lines of notification file for debugging
+    echo -e "\n${BLUE}Last notification content:${NC}"
+    tail -5 "$NOTIFICATION_FILE" 2>/dev/null || echo "No content found"
+    exit 1
+fi
+
+# Copy to clipboard
+echo "$OTC" | pbcopy
+
+echo -e "${GREEN}✅ OTC found and copied to clipboard: ${NC}${BLUE}$OTC${NC}"
+echo -e "${YELLOW}📋 Press Cmd+V to paste the code in Authelia${NC}"
+
+# Show notification
+osascript -e "display notification \"OTC: $OTC\" with title \"Authelia OTC\" subtitle \"Copied to clipboard\"" 2>/dev/null || true
+
+# Show when the OTC was generated (if we can determine it)
+if [ -f "$NOTIFICATION_FILE" ]; then
+    MOD_TIME=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$NOTIFICATION_FILE" 2>/dev/null || stat -c "%y" "$NOTIFICATION_FILE" 2>/dev/null | cut -d. -f1)
+    echo -e "${BLUE}ℹ️  OTC generated at: $MOD_TIME${NC}"
+fi

@@ -1,0 +1,97 @@
+#!/bin/bash
+# Script to update Authelia configuration with current domain variables
+# Usage: ./scripts/update-authelia-config.sh
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔐 Updating Authelia configuration...${NC}"
+
+# Check if .env file exists
+if [[ ! -f ".env" ]]; then
+    echo -e "${RED}❌ .env file not found. Please ensure you're running from the project root.${NC}"
+    exit 1
+fi
+
+# Extract domain-related variables from .env
+eval $(grep -E "^(PRIMARY_DOMAIN|MACHINE_ID|.*_SUBDOMAIN|GENERIC_.*_DOMAIN|AUTHELIA_.*SECRET|AUTHELIA_.*KEY)=" .env)
+
+# Check if required variables are set
+REQUIRED_VARS=(
+    "PRIMARY_DOMAIN"
+    "MACHINE_ID"
+    "AUTH_SUBDOMAIN"
+    "WEBUI_SUBDOMAIN"
+    "PERPLEXICA_SUBDOMAIN"
+    "CANARY_SUBDOMAIN"
+    "AUTHELIA_SESSION_SECRET"
+    "AUTHELIA_STORAGE_ENCRYPTION_KEY"
+)
+
+echo -e "${YELLOW}📋 Checking required environment variables...${NC}"
+for var in "${REQUIRED_VARS[@]}"; do
+    if [[ -z "${!var}" ]]; then
+        echo -e "${RED}❌ Required variable $var is not set in .env file${NC}"
+        exit 1
+    fi
+done
+
+# Construct domain variables
+export WEBUI_DOMAIN="${WEBUI_SUBDOMAIN}-${MACHINE_ID}.${PRIMARY_DOMAIN}"
+export PERPLEXICA_DOMAIN="${PERPLEXICA_SUBDOMAIN}-${MACHINE_ID}.${PRIMARY_DOMAIN}"
+export AUTH_DOMAIN="${AUTH_SUBDOMAIN}-${MACHINE_ID}.${PRIMARY_DOMAIN}"
+export CANARY_DOMAIN="${CANARY_SUBDOMAIN}.${PRIMARY_DOMAIN}"
+
+echo -e "${GREEN}✅ Environment variables verified${NC}"
+echo -e "${YELLOW}🌐 Domain configuration:${NC}"
+echo -e "  Primary Domain: ${PRIMARY_DOMAIN}"
+echo -e "  Auth Portal: ${AUTH_DOMAIN}"
+echo -e "  WebUI: ${WEBUI_DOMAIN}"
+echo -e "  Perplexica: ${PERPLEXICA_DOMAIN}"
+echo -e "  Canary: ${CANARY_DOMAIN}"
+
+# Check if Authelia is running
+if docker ps --filter "name=co-authelia-service" --format "{{.Names}}" | grep -q "co-authelia-service"; then
+    echo -e "${YELLOW}🔄 Restarting Authelia to apply new configuration...${NC}"
+    docker restart co-authelia-service co-authelia-redis
+    
+    # Wait for services to come up
+    echo -e "${YELLOW}⏳ Waiting for Authelia to start...${NC}"
+    sleep 5
+    
+    # Check if Authelia is healthy
+    if docker ps --filter "name=co-authelia-service" --filter "status=running" --format "{{.Names}}" | grep -q "co-authelia-service"; then
+        echo -e "${GREEN}✅ Authelia successfully restarted${NC}"
+        
+        # Check if health endpoint is responding
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:9091/api/health | grep -q "200"; then
+            echo -e "${GREEN}✅ Authelia health check passed${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Authelia is running but health check failed. Check logs: docker logs co-authelia-service${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Authelia container failed to start. Check logs: docker logs co-authelia-service${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}⚠️  Authelia is not running. Start it with: docker compose up -d authelia redis${NC}"
+fi
+
+echo -e "${BLUE}ℹ️  Two-Factor Authentication Status:${NC}"
+echo -e "  - WebAuthn/Passkeys: Enabled"
+echo -e "  - TOTP (Authenticator Apps): Enabled"
+echo -e "  - Default Policy: two_factor"
+echo -e ""
+echo -e "${BLUE}🔑 To register a YubiKey or Passkey:${NC}"
+echo -e "  1. Visit https://${AUTH_DOMAIN}"
+echo -e "  2. Log in with your username and password"
+echo -e "  3. Click on 'Security' or 'Configuration'"
+echo -e "  4. Register your security key"
+echo -e ""
+echo -e "${GREEN}🎉 Authelia configuration update complete!${NC}"

@@ -1,0 +1,64 @@
+#!/bin/bash
+# SSL Certificate Migration to 1Password - Simple Version
+
+VAULT="Nazarick API"
+
+echo "🔐 Migrating SSL Certificates to 1Password"
+
+# Function to sanitize filename for 1Password title
+sanitize_name() {
+    echo "$1" | sed 's/canaryseas\.com/test.yourdomain.com/g; s/corporateseas\.com/yourdomain.com/g'
+}
+
+# Function to process certificate pair
+process_cert() {
+    local base_name="$1"
+    local cert_file="$2"
+    local key_file="$3"
+    
+    if [[ -f "$cert_file" && -f "$key_file" ]]; then
+        local sanitized_name
+        sanitized_name=$(sanitize_name "$base_name")
+        
+        echo "📜 Processing: $sanitized_name"
+        
+        # Read files
+        local cert_content
+        local key_content
+        cert_content=$(cat "$cert_file")
+        key_content=$(cat "$key_file")
+        
+        # Create 1Password entry
+        local combined_content="CERTIFICATE:
+$cert_content
+
+PRIVATE KEY:
+$key_content"
+        
+        if op item create --category="secure note" \
+            --title="SSL: $sanitized_name" \
+            --vault="$VAULT" \
+            "notesPlain=$combined_content" &>/dev/null; then
+            echo "   ✅ Created: SSL: $sanitized_name"
+        else
+            echo "   ❌ Failed: SSL: $sanitized_name" 
+        fi
+    fi
+}
+
+# Process all certificate pairs
+find . -name "*.crt" -type f | while read -r cert_file; do
+    base_name=$(basename "$cert_file" .crt)
+    key_file="${cert_file%.crt}.key"
+    
+    # Skip if already processed (auth-test.yourdomain.com was done manually)
+    if [[ "$base_name" == "auth-canaryseas.com" ]]; then
+        echo "📜 Skipping: $base_name (already migrated)"
+        continue
+    fi
+    
+    process_cert "$base_name" "$cert_file" "$key_file"
+done
+
+echo ""
+echo "🎉 Certificate migration completed!"
