@@ -175,7 +175,7 @@ analyze_current_state() {
     fi
     
     # Check for personal information
-    local personal_files=$(grep -r "corporateseas\|canaryseas\|example\|username\|fweir" "$PROJECT_ROOT" \
+    local personal_files=$(grep -r "yourdomain\|testdomain\|example\|username\|personal" "$PROJECT_ROOT" \
                                   --include="*.yml" --include="*.conf" --include="*.md" --include="*.sh" \
                                   --exclude-dir=backup --exclude-dir=.git 2>/dev/null | wc -l)
     echo "  👤 Files with personal info: $personal_files files"

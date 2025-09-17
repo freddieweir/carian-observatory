@@ -51,7 +51,7 @@ analyze_current_state() {
     # Check for personal information
     local personal_files=$(find "$PROJECT_ROOT" -type f \( -name "*.yml" -o -name "*.conf" -o -name "*.md" -o -name "*.sh" \) \
                           -not -path "*/backup/*" -not -path "*/.git/*" \
-                          -exec grep -l "corporateseas\|canaryseas\|example\|username\|fweir" {} \; 2>/dev/null | wc -l)
+                          -exec grep -l "yourdomain\|testdomain\|example\|username\|personal" {} \; 2>/dev/null | wc -l)
     echo "  👤 Files with Personal Info: ${YELLOW}$personal_files files${NC}"
     
     # Check migration state

@@ -59,7 +59,7 @@ REPLACEMENTS=(
     "auth-test.yourdomain.com:auth-test.yourdomain.com"
     "webui-test.yourdomain.com:webui-test.yourdomain.com"
     "admin:username"
-    "localhost@chaoticjazz.com:user@example.com"
+    "localhost@example.com:user@example.com"
 )
 
 # Perform replacements
@@ -84,7 +84,7 @@ echo -e "${GREEN}✅ Domain references sanitized${NC}"
 # 4. Check for remaining personal information
 echo -e "${YELLOW}🔍 Checking for remaining personal information...${NC}"
 
-REMAINING=$(grep -r "corporateseas\|admin\|chaoticjazz" . \
+REMAINING=$(grep -r "yourdomain\.com\|admin\|personal-info" . \
     --exclude-dir=.git \
     --exclude-dir=node_modules \
     --exclude-dir=.claude \
@@ -93,7 +93,7 @@ REMAINING=$(grep -r "corporateseas\|admin\|chaoticjazz" . \
 
 if [ "$REMAINING" -gt 0 ]; then
     echo -e "${YELLOW}⚠️  Found $REMAINING remaining references:${NC}"
-    grep -r "corporateseas\|admin\|chaoticjazz" . \
+    grep -r "yourdomain\.com\|admin\|personal-info" . \
         --exclude-dir=.git \
         --exclude-dir=node_modules \
         --exclude-dir=.claude \

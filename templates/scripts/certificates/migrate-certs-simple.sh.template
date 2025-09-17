@@ -7,7 +7,7 @@ echo "🔐 Migrating SSL Certificates to 1Password"
 
 # Function to sanitize filename for 1Password title
 sanitize_name() {
-    echo "$1" | sed 's/canaryseas\.com/test.yourdomain.com/g; s/corporateseas\.com/yourdomain.com/g'
+    echo "$1" | sed 's/testdomain\.com/test.yourdomain.com/g; s/yourdomain\.com/yourdomain.com/g'
 }
 
 # Function to process certificate pair
@@ -52,7 +52,7 @@ find . -name "*.crt" -type f | while read -r cert_file; do
     key_file="${cert_file%.crt}.key"
     
     # Skip if already processed (auth-test.yourdomain.com was done manually)
-    if [[ "$base_name" == "auth-canaryseas.com" ]]; then
+    if [[ "$base_name" == "auth-test.yourdomain.com" ]]; then
         echo "📜 Skipping: $base_name (already migrated)"
         continue
     fi
