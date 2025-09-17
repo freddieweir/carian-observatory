@@ -126,6 +126,26 @@ Templates support two processing modes:
 - **Simple substitution**: `yourdomain.com` → your actual domain
 - **Environment variables**: `${VARIABLE_NAME}` → value from `.env` file
 
+### Complete Template Coverage
+
+The template system now covers **ALL** scripts and configurations:
+
+#### Script Templates (`templates/scripts/`)
+- **Authentication** (6 scripts): Password management, 2FA setup, YubiKey configuration
+- **Certificates** (4 scripts): SSL deployment, certificate migration, setup utilities
+- **Infrastructure** (2 scripts): Host management, secret-enabled startup
+- **Migration** (5 scripts): Portfolio migration, modular conversion, summary tools
+- **OnePassword** (6 scripts): Connect API, OTC retrieval, certificate storage
+- **Monitoring** (system monitoring scripts)
+- **Root-level** (4 scripts): Repository sanitization, Authelia configuration
+
+#### Service Templates (`templates/services/`)
+- **Authelia**: Full authentication configuration
+- **Nginx**: HTTPS reverse proxy configuration
+- **Homepage**: Dashboard configuration and startup scripts
+
+Total: **27+ script templates** ensuring zero domain exposure
+
 ## SSL Certificates
 
 Place certificates in `services/nginx/ssl/`:

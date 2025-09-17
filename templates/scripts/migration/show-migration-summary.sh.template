@@ -1,0 +1,284 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Portfolio Migration Summary Display
+# =============================================================================
+# Shows a comprehensive summary of the migration tools and process
+# =============================================================================
+
+set -euo pipefail
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+show_header() {
+    echo -e "${WHITE}"
+    cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                    AI INFRASTRUCTURE PORTFOLIO MIGRATION TOOLKIT                    ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${NC}"
+}
+
+analyze_current_state() {
+    echo -e "${CYAN}📊 CURRENT PROJECT ANALYSIS${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    # Count sensitive files
+    local ssl_count=$(find "$PROJECT_ROOT" \( -name "*.crt" -o -name "*.key" -o -name "*.pem" \) \
+                                          -not -path "*/backup/*" -not -path "*/.git/*" 2>/dev/null | wc -l)
+    local db_count=$(find "$PROJECT_ROOT" -name "*.sqlite*" \
+                                         -not -path "*/backup/*" -not -path "*/.git/*" 2>/dev/null | wc -l)
+    
+    echo "  🔒 SSL Certificates & Keys: ${YELLOW}$ssl_count files${NC}"
+    echo "  🗄️  Database Files: ${YELLOW}$db_count files${NC}"
+    
+    if [[ -f "$PROJECT_ROOT/.env" ]]; then
+        local secret_count=$(grep -c "SECRET\|KEY.*=" "$PROJECT_ROOT/.env" 2>/dev/null || echo 0)
+        echo "  🔐 Hard-coded Secrets: ${YELLOW}$secret_count in .env${NC}"
+    fi
+    
+    # Check for personal information
+    local personal_files=$(find "$PROJECT_ROOT" -type f \( -name "*.yml" -o -name "*.conf" -o -name "*.md" -o -name "*.sh" \) \
+                          -not -path "*/backup/*" -not -path "*/.git/*" \
+                          -exec grep -l "yourdomain\|testdomain\|example\|username\|personal" {} \; 2>/dev/null | wc -l)
+    echo "  👤 Files with Personal Info: ${YELLOW}$personal_files files${NC}"
+    
+    # Check migration state
+    if [[ -f "$PROJECT_ROOT/.migration-state" ]]; then
+        local completed_steps=$(grep -c ":completed:" "$PROJECT_ROOT/.migration-state" 2>/dev/null || echo 0)
+        echo "  🎯 Migration Progress: ${GREEN}$completed_steps steps completed${NC}"
+    else
+        echo "  🎯 Migration Progress: ${YELLOW}Not started${NC}"
+    fi
+    
+    echo
+}
+
+show_tools_overview() {
+    echo -e "${CYAN}🛠️  AVAILABLE MIGRATION TOOLS${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    echo -e "${WHITE}1. Initial Setup & Preparation${NC}"
+    echo -e "   ${BLUE}./scripts/init-portfolio-migration.sh${NC}"
+    echo "   • Check prerequisites (1Password CLI, Docker, jq)"
+    echo "   • Analyze current project state"
+    echo "   • Show migration plan overview"
+    echo "   • Create migration configuration"
+    echo
+    
+    echo -e "${WHITE}2. Main Migration Orchestrator${NC}"
+    echo -e "   ${BLUE}./scripts/portfolio-security-migration.sh [OPTIONS]${NC}"
+    echo "   • Complete 14-step migration process"
+    echo "   • Progress tracking with visual indicators"  
+    echo "   • Resume capability from any step"
+    echo "   • Interactive confirmations for safety"
+    echo "   • Comprehensive logging and verification"
+    echo
+    echo "   ${GREEN}Common Usage:${NC}"
+    echo "   ./scripts/portfolio-security-migration.sh           # Start fresh"
+    echo "   ./scripts/portfolio-security-migration.sh --resume  # Resume interrupted"
+    echo "   ./scripts/portfolio-security-migration.sh --verify  # Check status"
+    echo "   ./scripts/portfolio-security-migration.sh --help    # Show help"
+    echo
+    
+    echo -e "${WHITE}3. 1Password Integration Scripts${NC} ${PURPLE}(Created during migration)${NC}"
+    echo -e "   ${BLUE}./scripts/1password-deploy.sh${NC}"
+    echo "   • Deploy secrets from 1Password to filesystem"
+    echo "   • Process configuration templates"
+    echo "   • Retrieve SSL certificates"
+    echo
+    echo -e "   ${BLUE}./scripts/generate-and-store-certs.sh${NC}"
+    echo "   • Generate new SSL certificates"
+    echo "   • Store certificates in 1Password"
+    echo "   • Clean up local certificate files"
+    echo
+}
+
+show_migration_workflow() {
+    echo -e "${CYAN}🔄 COMPLETE MIGRATION WORKFLOW${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    echo -e "${YELLOW}Phase 1: Preparation${NC}"
+    echo "  1️⃣  Run initial setup and check prerequisites"
+    echo "  2️⃣  Create full project backup"  
+    echo "  3️⃣  Inventory all sensitive files and secrets"
+    echo
+    
+    echo -e "${YELLOW}Phase 2: 1Password Integration${NC}"
+    echo "  4️⃣  Setup 1Password vault structure"
+    echo "  5️⃣  Store SSL certificates (66+ files) in 1Password"
+    echo "  6️⃣  Store configuration secrets and keys"
+    echo "  7️⃣  Store user databases and authentication data"
+    echo "  8️⃣  Verify all data is accessible from 1Password"
+    echo
+    
+    echo -e "${YELLOW}Phase 3: Configuration Transformation${NC}"  
+    echo "  9️⃣  Create secure templates with op:// references"
+    echo "  🔟 Remove personal information, use placeholders"
+    echo "  1️⃣1️⃣ Update scripts for 1Password deployment"
+    echo
+    
+    echo -e "${YELLOW}Phase 4: Cleanup & Portfolio Preparation${NC}"
+    echo "  1️⃣2️⃣ Remove sensitive files from filesystem"
+    echo "  1️⃣3️⃣ Create professional documentation"
+    echo "  1️⃣4️⃣ Final security verification"
+    echo
+}
+
+show_security_transformation() {
+    echo -e "${CYAN}🔐 SECURITY TRANSFORMATION OVERVIEW${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    echo -e "${RED}❌ BEFORE MIGRATION (Current Issues):${NC}"
+    echo "   • Hard-coded secrets in .env files"
+    echo "   • Personal domains and usernames exposed"
+    echo "   • SSL certificates committed to git"
+    echo "   • User databases with real credentials"
+    echo "   • 66+ sensitive files in version control"
+    echo
+    
+    echo -e "${GREEN}✅ AFTER MIGRATION (Portfolio-Ready):${NC}"
+    echo "   • All secrets managed via 1Password CLI"
+    echo "   • Generic placeholder domains (yourdomain.com)"
+    echo "   • SSL certificates stored securely in 1Password"
+    echo "   • Configuration templates with op:// references"
+    echo "   • Zero sensitive data in git history"
+    echo "   • Enterprise-grade security documentation"
+    echo
+}
+
+show_post_migration_workflow() {
+    echo -e "${CYAN}🚀 POST-MIGRATION DEPLOYMENT WORKFLOW${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    echo -e "${WHITE}Your new deployment workflow:${NC}"
+    echo "  1. Clone portfolio repository"
+    echo "  2. Sign in to 1Password: ${BLUE}op signin${NC}"
+    echo "  3. Deploy secrets: ${BLUE}./scripts/1password-deploy.sh${NC}"
+    echo "  4. Start services: ${BLUE}docker compose up -d${NC}"
+    echo
+    
+    echo -e "${WHITE}Making configuration changes:${NC}"
+    echo "  1. Edit templates: ${BLUE}.env.template, *.yml.template${NC}"
+    echo "  2. Deploy changes: ${BLUE}op inject -i .env.template -o .env${NC}"
+    echo "  3. Restart services: ${BLUE}docker compose restart${NC}"
+    echo
+}
+
+show_documentation() {
+    echo -e "${CYAN}📚 DOCUMENTATION & RESOURCES${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    echo -e "${WHITE}Available Documentation:${NC}"
+    if [[ -f "$PROJECT_ROOT/PORTFOLIO_MIGRATION_GUIDE.md" ]]; then
+        echo "  📖 ${GREEN}PORTFOLIO_MIGRATION_GUIDE.md${NC} - Complete migration guide"
+    else
+        echo "  📖 ${YELLOW}PORTFOLIO_MIGRATION_GUIDE.md${NC} - (Will be created)"
+    fi
+    
+    if [[ -f "$PROJECT_ROOT/.gitignore.portfolio" ]]; then
+        echo "  🛡️  ${GREEN}.gitignore.portfolio${NC} - Enhanced security patterns"
+    else
+        echo "  🛡️  ${YELLOW}.gitignore.portfolio${NC} - (Will be created)"
+    fi
+    
+    echo "  📋 ${GREEN}README.md${NC} - Portfolio-ready project documentation"
+    echo "  🔐 ${GREEN}docs/SECURITY.md${NC} - Security architecture documentation"
+    echo "  🚀 ${GREEN}docs/DEPLOYMENT.md${NC} - Production deployment guide"
+    echo
+}
+
+show_next_steps() {
+    echo -e "${CYAN}🎯 RECOMMENDED NEXT STEPS${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    if [[ ! -f "$PROJECT_ROOT/.migration-state" ]]; then
+        echo -e "${WHITE}First Time Setup:${NC}"
+        echo "  1. Run: ${BLUE}./scripts/init-portfolio-migration.sh${NC}"
+        echo "  2. Review the migration plan"
+        echo "  3. Ensure 1Password CLI is set up"
+        echo "  4. Start migration: ${BLUE}./scripts/portfolio-security-migration.sh${NC}"
+    else
+        local completed_steps=$(grep -c ":completed:" "$PROJECT_ROOT/.migration-state" 2>/dev/null || echo 0)
+        if [[ $completed_steps -eq 0 ]]; then
+            echo -e "${WHITE}Ready to Start Migration:${NC}"
+            echo "  • Run: ${BLUE}./scripts/portfolio-security-migration.sh${NC}"
+        elif [[ $completed_steps -lt 14 ]]; then
+            echo -e "${WHITE}Continue Migration:${NC}"
+            echo "  • Resume: ${BLUE}./scripts/portfolio-security-migration.sh --resume${NC}"
+            echo "  • Check status: ${BLUE}./scripts/portfolio-security-migration.sh --verify${NC}"
+        else
+            echo -e "${WHITE}Migration Complete! 🎉${NC}"
+            echo "  • Verify final state: ${BLUE}./scripts/portfolio-security-migration.sh --verify${NC}"
+            echo "  • Test deployment: ${BLUE}./scripts/1password-deploy.sh${NC}"
+            echo "  • Start services: ${BLUE}docker compose up -d${NC}"
+        fi
+    fi
+    echo
+}
+
+show_safety_reminders() {
+    echo -e "${CYAN}⚠️  IMPORTANT SAFETY REMINDERS${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo -e "${YELLOW}Before starting:${NC}"
+    echo "  • Ensure 1Password CLI is authenticated"
+    echo "  • Have sufficient disk space for backups"  
+    echo "  • Consider committing current changes to git"
+    echo "  • Review all personal information that will be replaced"
+    echo
+    echo -e "${YELLOW}During migration:${NC}"
+    echo "  • The process creates full backups before any changes"
+    echo "  • All destructive operations require explicit confirmation"
+    echo "  • You can resume from any step if interrupted"
+    echo "  • Detailed logs are created for every operation"
+    echo
+    echo -e "${YELLOW}After migration:${NC}"
+    echo "  • Verify all services work with new configuration"
+    echo "  • Test 1Password secret retrieval"
+    echo "  • Review generated documentation"
+    echo "  • Consider replacing .gitignore with .gitignore.portfolio"
+    echo
+}
+
+main() {
+    show_header
+    analyze_current_state
+    show_tools_overview
+    show_migration_workflow  
+    show_security_transformation
+    show_post_migration_workflow
+    show_documentation
+    show_next_steps
+    show_safety_reminders
+    
+    echo -e "${GREEN}🏆 PORTFOLIO TRANSFORMATION READY${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo "This toolkit will transform your AI infrastructure project into a professional"
+    echo "portfolio piece showcasing enterprise security practices and modern DevSecOps workflows."
+    echo
+    echo -e "${WHITE}Questions or issues?${NC} Check the ${BLUE}PORTFOLIO_MIGRATION_GUIDE.md${NC} for detailed help."
+    echo
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

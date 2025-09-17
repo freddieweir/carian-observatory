@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Migration script to help transition from old structure to new modular structure
+# This script can be run safely multiple times
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "🔄 Migrating to modular Docker Compose structure..."
+
+# Stop old services if running
+echo "Stopping old services..."
+if [ -f "$PROJECT_ROOT/backup/old-structure/docker-compose.yaml" ]; then
+    docker compose -f "$PROJECT_ROOT/backup/old-structure/docker-compose.yaml" \
+                   -f "$PROJECT_ROOT/backup/old-structure/docker-compose.auth.yaml" \
+                   -f "$PROJECT_ROOT/backup/old-structure/docker-compose.monitoring.yaml" \
+                   down 2>/dev/null || true
+fi
+
+# Ensure environment file exists
+if [ ! -f "$PROJECT_ROOT/.env" ]; then
+    if [ -f "$PROJECT_ROOT/.env.example" ]; then
+        cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
+        echo "📝 Created .env from example - please review and update"
+    else
+        echo "❌ No .env file found - please create one from .env.example"
+        exit 1
+    fi
+fi
+
+# Start new modular services
+echo "Starting new modular services..."
+cd "$PROJECT_ROOT"
+docker compose up -d
+
+echo "✅ Migration complete!"
+echo ""
+echo "📊 Service status:"
+docker compose ps
+
+echo ""
+echo "🔗 Access your services:"
+echo "  • Open-WebUI: http://localhost:80 or https://webui.yourdomain.com"
+echo "  • Perplexica: https://perplexica.yourdomain.com"
+echo "  • Authelia: https://auth.yourdomain.com"
+echo ""
+echo "📖 For more information, see: README.md"

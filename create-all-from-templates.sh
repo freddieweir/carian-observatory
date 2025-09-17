@@ -185,6 +185,30 @@ for template in "$TEMPLATES_DIR/scripts/monitoring"/*.sh.template; do
     fi
 done
 
+# Process migration scripts
+echo -e "${GREEN}  🚀 Migration Scripts${NC}"
+for template in "$TEMPLATES_DIR/scripts/migration"/*.sh.template; do
+    if [[ -f "$template" ]]; then
+        filename=$(basename "$template" .template)
+        process_domain_template \
+            "$template" \
+            "$SCRIPT_DIR/scripts/migration/$filename" \
+            "Migration $filename script"
+    fi
+done
+
+# Process root-level scripts
+echo -e "${GREEN}  📝 Root-level Scripts${NC}"
+for template in "$TEMPLATES_DIR/scripts"/*.sh.template; do
+    if [[ -f "$template" ]]; then
+        filename=$(basename "$template" .template)
+        process_domain_template \
+            "$template" \
+            "$SCRIPT_DIR/scripts/$filename" \
+            "Root script $filename"
+    fi
+done
+
 echo
 
 echo -e "${BLUE}📁 Processing Service Templates${NC}"
