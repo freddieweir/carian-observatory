@@ -24,7 +24,7 @@ services:
       - GLANCE_DOMAIN=${GLANCE_DOMAIN}
       - GENERIC_GLANCE_DOMAIN=${GENERIC_GLANCE_DOMAIN}
     volumes:
-      - ./configs/https.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./configs/https.conf:/etc/nginx/conf.d/default.conf:ro
       - ./ssl:/etc/ssl/custom:ro
     depends_on:
       - open-webui
