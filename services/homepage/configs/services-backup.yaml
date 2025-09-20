@@ -1,0 +1,281 @@
+---
+- 🚀 Personal TL;DR:
+    - Open-WebUI:
+        href: https://webui.corporateseas.com
+        description: Main AI chat
+        icon: si-openai
+        ping: webui.corporateseas.com
+
+    - Perplexica:
+        href: https://perplexica.corporateseas.com
+        description: AI search
+        icon: si-perplexity
+        ping: perplexica.corporateseas.com
+
+    - Homepage:
+        href: https://homepage.corporateseas.com
+        description: This dashboard
+        icon: si-homeassistant
+        ping: homepage.corporateseas.com
+
+    - Authelia:
+        href: https://auth.corporateseas.com
+        description: Auth portal
+        icon: si-authelia
+        ping: auth.corporateseas.com
+
+    - GitHub Carian:
+        href: https://github.com/freddieweir/carian-observatory
+        description: Repo & issues
+        icon: si-github
+
+    - 1Password:
+        href: https://freddieweir.1password.com
+        description: Password vault
+        icon: si-1password
+
+    - Claude Code:
+        href: https://claude.ai/code
+        description: AI coding assistant
+        icon: si-anthropic
+
+    - Cursor:
+        href: https://cursor.sh
+        description: AI editor
+        icon: si-visualstudiocode
+
+- 📋 Quick Commands:
+    - Docker Status:
+        href: javascript:void(0)
+        description: docker ps --filter "name=co-"
+        icon: si-docker
+
+    - Restart Nginx:
+        href: javascript:void(0)
+        description: docker restart co-nginx-service
+        icon: si-nginx
+
+    - View Logs:
+        href: javascript:void(0)
+        description: docker compose logs -f
+        icon: si-logstash
+
+    - Git Status:
+        href: javascript:void(0)
+        description: git status
+        icon: si-git
+
+- AI Platform:
+    - Authentication Portal:
+        href: https://auth.corporateseas.com
+        description: Sign in first for access
+        icon: si-authelia
+
+    - Open-WebUI Production:
+        href: https://webui.corporateseas.com
+        description: Main AI chat interface
+        icon: si-openai
+
+    - Open-WebUI Canary:
+        href: https://webui-canary.corporateseas.com
+        description: Testing environment
+        icon: si-openai
+
+    - Perplexica Search:
+        href: https://perplexica.corporateseas.com
+        description: AI-powered search
+        icon: si-perplexity
+
+- Infrastructure:
+    - Homepage Dashboard:
+        href: https://homepage.corporateseas.com
+        description: This dashboard
+        icon: si-homeassistant
+
+    - Watchtower:
+        href: https://containrrr.dev/watchtower/
+        description: Automatic container updates
+        icon: si-docker
+        widget:
+          type: watchtower
+          url: http://localhost:8080
+          key: ${WATCHTOWER_API_KEY:-your_api_key_here}
+
+    - Nginx Proxy Manager:
+        href: https://nginxproxymanager.com/
+        description: Reverse proxy management
+        icon: si-nginx
+        widget:
+          type: nginxproxymanager
+          url: http://localhost:81
+          username: ${NPM_USERNAME:-admin@yourdomain.com}
+          password: ${NPM_PASSWORD:-changeme}
+
+    - Tailscale:
+        href: https://tailscale.com/
+        description: VPN mesh network
+        icon: si-tailscale
+        widget:
+          type: tailscale
+          deviceid: ${TAILSCALE_DEVICE_ID:-your_device_id}
+          key: ${TAILSCALE_API_KEY:-your_api_key}
+
+- Whatbox:
+    - Helm File Browser:
+        href: https://files.sailingcorporateseas.box.ca/
+        description: File browser and management
+        icon: si-files
+
+    - Jackett:
+        href: https://jackett.sailingcorporateseas.box.ca/
+        description: Torrent indexer proxy
+        icon: si-jackett
+
+    - Overseerr:
+        href: https://overseerr.sailingcorporateseas.box.ca/
+        description: Media request management
+        icon: si-overseerr
+
+    - Prowlarr:
+        href: https://prowlarr.sailingcorporateseas.box.ca/
+        description: Indexer manager
+        icon: si-prowlarr
+
+    - Radarr:
+        href: https://radarr.sailingcorporateseas.box.ca/
+        description: Movie collection manager
+        icon: si-radarr
+
+    - Readarr:
+        href: https://readarr.sailingcorporateseas.box.ca/
+        description: Book collection manager
+        icon: si-readarr
+
+    - rTorrent:
+        href: https://rtorrent.sailingcorporateseas.box.ca/
+        description: BitTorrent client
+        icon: si-rtorrent
+
+    - Sonarr:
+        href: https://sonarr.sailingcorporateseas.box.ca/
+        description: TV series collection manager
+        icon: si-sonarr
+
+    - Syncthing:
+        href: https://syncthing.sailingcorporateseas.box.ca/
+        description: File synchronization
+        icon: si-syncthing
+
+- Documentation:
+    - Authelia Docs:
+        href: https://www.authelia.com/
+        description: Authentication system documentation
+        icon: si-authelia
+
+    - Homepage Docs:
+        href: https://gethomepage.dev/
+        description: Dashboard documentation
+        icon: si-homeassistant
+
+    - Docker Hub:
+        href: https://hub.docker.com/
+        description: Container registry
+        icon: si-docker
+
+    - ProtonDB:
+        href: https://www.protondb.com/
+        description: Gaming compatibility database
+        icon: si-steam
+
+- 🛠️ Dev Tools:
+    - VS Code:
+        href: vscode://
+        description: Open VS Code
+        icon: si-visualstudiocode
+
+    - Terminal:
+        href: iterm://
+        description: Open iTerm2
+        icon: si-iterm2
+
+    - TablePlus:
+        href: tableplus://
+        description: Database manager
+        icon: si-postgresql
+
+    - Postman:
+        href: postman://
+        description: API testing
+        icon: si-postman
+
+    - Docker Desktop:
+        href: docker://
+        description: Container management
+        icon: si-docker
+
+    - GitHub Desktop:
+        href: x-github-client://
+        description: Git GUI
+        icon: si-github
+
+- 💡 Personal Favorites:
+    - ChatGPT:
+        href: https://chat.openai.com
+        description: OpenAI ChatGPT
+        icon: si-openai
+
+    - Perplexity:
+        href: https://www.perplexity.ai
+        description: AI search engine
+        icon: si-perplexity
+
+    - Anthropic Console:
+        href: https://console.anthropic.com
+        description: Claude API console
+        icon: si-anthropic
+
+    - Hugging Face:
+        href: https://huggingface.co
+        description: ML model hub
+        icon: si-huggingface
+
+    - Reddit:
+        href: https://reddit.com
+        description: The front page
+        icon: si-reddit
+
+    - Hacker News:
+        href: https://news.ycombinator.com
+        description: Tech news
+        icon: si-ycombinator
+
+- 🎮 Gaming & Media:
+    - Steam:
+        href: steam://
+        description: Gaming platform
+        icon: si-steam
+
+    - Discord:
+        href: discord://
+        description: Chat & voice
+        icon: si-discord
+
+    - Spotify:
+        href: spotify://
+        description: Music streaming
+        icon: si-spotify
+
+    - Netflix:
+        href: https://netflix.com
+        description: Streaming service
+        icon: si-netflix
+
+    - YouTube:
+        href: https://youtube.com
+        description: Video platform
+        icon: si-youtube
+
+    - Twitch:
+        href: https://twitch.tv
+        description: Live streaming
+        icon: si-twitch
