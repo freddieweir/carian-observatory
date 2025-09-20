@@ -21,6 +21,8 @@ services:
       - GENERIC_PERPLEXICA_DOMAIN=${GENERIC_PERPLEXICA_DOMAIN}
       - GENERIC_AUTH_DOMAIN=${GENERIC_AUTH_DOMAIN}
       - GENERIC_HOMEPAGE_DOMAIN=${GENERIC_HOMEPAGE_DOMAIN}
+      - GLANCE_DOMAIN=${GLANCE_DOMAIN}
+      - GENERIC_GLANCE_DOMAIN=${GENERIC_GLANCE_DOMAIN}
     volumes:
       - ./configs/https.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./ssl:/etc/ssl/custom:ro
@@ -29,6 +31,7 @@ services:
       - perplexica
       - searxng
       - homepage
+      - glance
     networks:
       - app-network
     extra_hosts:

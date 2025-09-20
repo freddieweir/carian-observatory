@@ -72,6 +72,7 @@ token_cache*
 # Generated service configurations (use templates/ instead)
 services/*/configs/*
 !services/*/configs/.gitkeep
+!services/*/configs/*.template
 !services/*/docker-compose.yml
 
 # Generated scripts (use templates/ instead)
@@ -81,6 +82,12 @@ services/*/scripts/*
 # Generated scripts directory (use templates/scripts/ instead)
 scripts/*
 !scripts/.gitkeep
+
+# Exception: Allow specific script directories for service-specific scripts
+!scripts/glance/
+scripts/glance/*
+!scripts/glance/*.template
+!scripts/glance/create-scripts.sh
 
 # Allow templates directory and all contents (SAFE TO COMMIT)
 !templates/
@@ -422,6 +429,13 @@ _site/
 
 # Claude IDE settings (personal)
 .claude/
+
+# =============================================================================
+# PROJECT MANAGEMENT AND DOCUMENTATION
+# =============================================================================
+# Task tracking and project documentation that may contain specific domains
+tasks/
+temporary-memory/
 
 # =============================================================================
 # TEMPLATE SYSTEM SUMMARY
