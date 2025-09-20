@@ -1,28 +1,28 @@
 ---
 - 🚀 Personal TL;DR:
     - Open-WebUI:
-        href: https://webui.corporateseas.com
+        href: https://webui.yourdomain.com
         description: Main AI chat
         icon: si-openai
-        ping: webui.corporateseas.com
+        ping: webui.yourdomain.com
 
     - Perplexica:
-        href: https://perplexica.corporateseas.com
+        href: https://perplexica.yourdomain.com
         description: AI search
         icon: si-perplexity
-        ping: perplexica.corporateseas.com
+        ping: perplexica.yourdomain.com
 
     - Homepage:
-        href: https://homepage.corporateseas.com
+        href: https://homepage.yourdomain.com
         description: This dashboard
         icon: si-homeassistant
-        ping: homepage.corporateseas.com
+        ping: homepage.yourdomain.com
 
     - Authelia:
-        href: https://auth.corporateseas.com
+        href: https://auth.yourdomain.com
         description: Auth portal
         icon: si-authelia
-        ping: auth.corporateseas.com
+        ping: auth.yourdomain.com
 
     - GitHub Carian:
         href: https://github.com/freddieweir/carian-observatory
@@ -67,28 +67,28 @@
 
 - AI Platform:
     - Authentication Portal:
-        href: https://auth.corporateseas.com
+        href: https://auth.yourdomain.com
         description: Sign in first for access
         icon: si-authelia
 
     - Open-WebUI Production:
-        href: https://webui.corporateseas.com
+        href: https://webui.yourdomain.com
         description: Main AI chat interface
         icon: si-openai
 
     - Open-WebUI Canary:
-        href: https://webui-canary.corporateseas.com
+        href: https://webui-canary.yourdomain.com
         description: Testing environment
         icon: si-openai
 
     - Perplexica Search:
-        href: https://perplexica.corporateseas.com
+        href: https://perplexica.yourdomain.com
         description: AI-powered search
         icon: si-perplexity
 
 - Infrastructure:
     - Homepage Dashboard:
-        href: https://homepage.corporateseas.com
+        href: https://homepage.yourdomain.com
         description: This dashboard
         icon: si-homeassistant
 
@@ -122,47 +122,47 @@
 
 - Whatbox:
     - Helm File Browser:
-        href: https://files.sailingcorporateseas.box.ca/
+        href: https://files.yourserver.yourdomain.com/
         description: File browser and management
         icon: si-files
 
     - Jackett:
-        href: https://jackett.sailingcorporateseas.box.ca/
+        href: https://jackett.yourserver.yourdomain.com/
         description: Torrent indexer proxy
         icon: si-jackett
 
     - Overseerr:
-        href: https://overseerr.sailingcorporateseas.box.ca/
+        href: https://overseerr.yourserver.yourdomain.com/
         description: Media request management
         icon: si-overseerr
 
     - Prowlarr:
-        href: https://prowlarr.sailingcorporateseas.box.ca/
+        href: https://prowlarr.yourserver.yourdomain.com/
         description: Indexer manager
         icon: si-prowlarr
 
     - Radarr:
-        href: https://radarr.sailingcorporateseas.box.ca/
+        href: https://radarr.yourserver.yourdomain.com/
         description: Movie collection manager
         icon: si-radarr
 
     - Readarr:
-        href: https://readarr.sailingcorporateseas.box.ca/
+        href: https://readarr.yourserver.yourdomain.com/
         description: Book collection manager
         icon: si-readarr
 
     - rTorrent:
-        href: https://rtorrent.sailingcorporateseas.box.ca/
+        href: https://rtorrent.yourserver.yourdomain.com/
         description: BitTorrent client
         icon: si-rtorrent
 
     - Sonarr:
-        href: https://sonarr.sailingcorporateseas.box.ca/
+        href: https://sonarr.yourserver.yourdomain.com/
         description: TV series collection manager
         icon: si-sonarr
 
     - Syncthing:
-        href: https://syncthing.sailingcorporateseas.box.ca/
+        href: https://syncthing.yourserver.yourdomain.com/
         description: File synchronization
         icon: si-syncthing
 
