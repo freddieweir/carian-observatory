@@ -14,9 +14,9 @@ if [ -f "$ENV_FILE" ]; then
             export "$line"
         fi
     done
-    # Manually export the domain variables we need
-    export PRIMARY_DOMAIN=corporateseas.com
-    export MONITORING_SUBDOMAIN=monitoring
+    # Export domain variables from environment (fallback to yourdomain.com for safety)
+    export PRIMARY_DOMAIN=${PRODUCTION_DOMAIN:-yourdomain.com}
+    export MONITORING_SUBDOMAIN=${MONITORING_SUBDOMAIN:-monitoring}
     export MONITORING_DOMAIN="${MONITORING_SUBDOMAIN}.${PRIMARY_DOMAIN}"
     set +a
 else
