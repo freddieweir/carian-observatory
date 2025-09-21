@@ -157,7 +157,7 @@ server {
         proxy_hide_header X-Frame-Options;
         proxy_hide_header Content-Security-Policy;
         add_header X-Frame-Options "ALLOWFROM https://${GLANCE_DOMAIN}" always;
-        add_header Content-Security-Policy "frame-ancestors 'self' https://${GLANCE_DOMAIN} https://*.corporateseas.com;" always;
+        add_header Content-Security-Policy "frame-ancestors 'self' https://${GLANCE_DOMAIN} https://*.${PRIMARY_DOMAIN};" always;
 
         proxy_set_header Remote-User $user;
         proxy_pass http://perplexica:3000/;
