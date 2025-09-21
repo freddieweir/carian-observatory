@@ -1,0 +1,111 @@
+# Critical Alerts for Carian Observatory
+# Start with essential alerts to avoid alert fatigue
+
+groups:
+  - name: critical-services
+    rules:
+      # Service Down Alert - Critical for all services
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} service is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+
+      # Container Down Alert - Specific to Carian Observatory containers
+      - alert: ContainerDown
+        expr: absent(container_last_seen{name=~"co-.*"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Carian Observatory container {{ $labels.name }} is down"
+          description: "Container {{ $labels.name }} has been down for more than 2 minutes."
+
+  - name: resource-alerts
+    rules:
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name=~"co-.*"} / container_spec_memory_limit_bytes{name=~"co-.*"}) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} memory usage is above 90% for more than 5 minutes."
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: (rate(container_cpu_usage_seconds_total{name=~"co-.*"}[5m]) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for more than 10 minutes."
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Root filesystem has less than 10% free space remaining."
+
+  - name: carian-observatory-specific
+    rules:
+      # Authelia Redis Connection
+      - alert: AutheliaRedisDown
+        expr: redis_up{instance="redis-exporter:9121"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Authelia Redis is down"
+          description: "Authentication will fail - Redis backing store is unreachable."
+
+      # High Redis Memory Usage
+      - alert: RedisMemoryHigh
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Authelia Redis memory usage high"
+          description: "Redis memory usage is above 90%, may affect authentication performance."
+
+      # Container Restart Alert
+      - alert: ContainerRestarting
+        expr: increase(container_start_time_seconds{name=~"co-.*"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "Container {{ $labels.name }} restarted"
+          description: "Container {{ $labels.name }} has restarted."
+
+  - name: network-alerts
+    rules:
+      # High Network Error Rate
+      - alert: HighNetworkErrors
+        expr: rate(container_network_receive_errors_total{name=~"co-.*"}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High network error rate on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} has high network error rate."
+
+      # Container Network Issues
+      - alert: ContainerNetworkIssues
+        expr: rate(container_network_transmit_errors_total{name=~"co-.*"}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Network transmission errors on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} experiencing network transmission issues."

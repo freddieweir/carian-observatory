@@ -60,6 +60,9 @@ session_*
 auth_state*
 token_cache*
 
+# Task management directories
+/tasks/
+
 # =============================================================================
 # NEW TEMPLATE SYSTEM - DIRECTORY-LEVEL EXCLUSIONS
 # =============================================================================
@@ -75,9 +78,14 @@ services/*/configs/*
 !services/*/configs/*.template
 !services/*/docker-compose.yml
 
+# Generated monitoring configurations (use templates/ instead)
+services/monitoring/alertmanager/alertmanager.yml
+!services/monitoring/alertmanager/alertmanager.yml.template
+
 # Generated scripts (use templates/ instead)
 services/*/scripts/*
 !services/*/scripts/.gitkeep
+!services/monitoring/scripts/generate-config.sh
 
 # Generated scripts directory (use templates/scripts/ instead)
 scripts/*
