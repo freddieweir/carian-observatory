@@ -40,8 +40,6 @@ Choose your preferred secret management approach:
 - Domain names or localhost setup
 - SSL certificate access (self-signed or CA-issued)
 
-**📝 Need help getting started?** See [TASK-004: Prerequisites Documentation](tasks/TASK-004-PREREQUISITES_DOCUMENTATION.md) for detailed setup guides.
-
 ## Quick Start
 
 ```bash
