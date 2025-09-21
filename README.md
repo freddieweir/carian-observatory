@@ -5,19 +5,19 @@
 
 A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before deploying Carian Observatory, ensure you have:
 
-### 🔧 Essential Requirements
+### Essential Requirements
 - **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux)
 - **Docker Compose** v2.20+ (for modular include feature)
 - **Git** (for cloning repository)
 - **Basic terminal/command line** familiarity
 
-**🍎 Platform Note**: This repository was designed with **macOS usage in mind**. Windows and Linux users may experience variations in certain setup steps (YMMV - Your Mileage May Vary).
+**Platform Note**: This repository was designed with **macOS usage in mind**. Windows and Linux users may experience variations in certain setup steps (YMMV - Your Mileage May Vary).
 
-### 🔐 Security Management Options
+### Security Management Options
 
 Choose your preferred secret management approach:
 
@@ -35,7 +35,7 @@ Choose your preferred secret management approach:
 - Other secret management solutions
 - Custom environment variable handling
 
-### 🌐 Network Requirements
+### Network Requirements
 - Available ports: 80, 443 (nginx), 8080-8090 (services)
 - Domain names or localhost setup
 - SSL certificate access (self-signed or CA-issued)
