@@ -1,7 +1,209 @@
-# Monitoring Services - Separate Watchtowers for Service and Canary
+# PGLA Observability Stack (Prometheus + Grafana + Loki + Alertmanager)
+# Carian Observatory Enterprise Monitoring Platform
+
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}_app-network
+
+volumes:
+  prometheus_data:
+    name: ${USER_PREFIX}-prometheus-data
+  grafana_data:
+    name: ${USER_PREFIX}-grafana-data
+  loki_data:
+    name: ${USER_PREFIX}-loki-data
 
 services:
-  # Main service watchtower - daily updates for stability
+  # Prometheus - Metrics collection and storage
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${USER_PREFIX}-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=prometheus"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${USER_PREFIX}-grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_SERVER_DOMAIN=${MONITORING_DOMAIN:-monitoring.yourdomain.com}
+      - GF_SERVER_ROOT_URL=https://${MONITORING_DOMAIN:-monitoring.yourdomain.com}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_LOG_LEVEL=info
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=grafana"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - prometheus
+
+  # cAdvisor - Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ${USER_PREFIX}-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=cadvisor"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Node Exporter - System metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ${USER_PREFIX}-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=node-exporter"
+
+  # Redis Exporter - Redis metrics for Authelia
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: ${USER_PREFIX}-redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "${USER_PREFIX}-authelia-redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=redis-exporter"
+    depends_on:
+      - prometheus
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: ${USER_PREFIX}-loki
+    restart: unless-stopped
+    volumes:
+      - loki_data:/loki
+      - ./loki/loki.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=loki"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Promtail - Log shipper
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ${USER_PREFIX}-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+    command: -config.file=/etc/promtail/promtail.yml
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=promtail"
+    depends_on:
+      - loki
+
+  # Alertmanager - Alert handling
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ${USER_PREFIX}-alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    ports:
+      - "9093:9093"
+    networks:
+      - app-network
+    labels:
+      - "com.carian-observatory.service=monitoring"
+      - "com.carian-observatory.component=alertmanager"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Watchtower Services (preserved from original)
+  # Main service watchtower - Daily updates for production stability
   watchtower-service:
     image: containrrr/watchtower
     container_name: ${USER_PREFIX}-ow-watchtower-service
@@ -13,17 +215,16 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_POLL_INTERVAL=86400   # Check daily (24 hours)
+      - WATCHTOWER_POLL_INTERVAL=86400     # Check daily (24 hours)
       - WATCHTOWER_MONITOR_ONLY=false
       - WATCHTOWER_NOTIFICATIONS_LEVEL=info
-      - WATCHTOWER_REMOVE_VOLUMES=false  # Never remove volumes
+      - WATCHTOWER_REMOVE_VOLUMES=false
       - WATCHTOWER_SCOPE=service
     networks:
       - app-network
     labels:
       - "com.carian-observatory.watchtower.scope=service"
       - "com.carian-observatory.watchtower.schedule=daily"
-    # Monitor main production services
     command: >
       --scope service
       ${USER_PREFIX}-open-webui-service
@@ -33,7 +234,7 @@ services:
       ${USER_PREFIX}-authelia-redis
       ${USER_PREFIX}-nginx-service
 
-  # Canary watchtower - hourly updates for testing latest versions
+  # Canary watchtower - Hourly updates for testing
   watchtower-canary:
     image: containrrr/watchtower
     container_name: ${USER_PREFIX}-ow-watchtower-canary
@@ -45,21 +246,16 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_POLL_INTERVAL=3600    # Check hourly (1 hour)
+      - WATCHTOWER_POLL_INTERVAL=3600      # Check hourly
       - WATCHTOWER_MONITOR_ONLY=false
       - WATCHTOWER_NOTIFICATIONS_LEVEL=info
-      - WATCHTOWER_REMOVE_VOLUMES=false  # Never remove volumes
+      - WATCHTOWER_REMOVE_VOLUMES=false
       - WATCHTOWER_SCOPE=canary
     networks:
       - app-network
     labels:
       - "com.carian-observatory.watchtower.scope=canary"
       - "com.carian-observatory.watchtower.schedule=hourly"
-    # Monitor canary services only
     command: >
       --scope canary
       ${USER_PREFIX}-open-webui-canary
-
-networks:
-  app-network:
-    name: ${COMPOSE_PROJECT_NAME}_app-network

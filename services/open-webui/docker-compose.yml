@@ -3,7 +3,7 @@
 
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:${WEBUI_VERSION:-v0.6.21}
+    image: ghcr.io/open-webui/open-webui:latest
     container_name: ${USER_PREFIX}-open-webui-service
     restart: unless-stopped
     volumes:
@@ -34,6 +34,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "com.centurylinklabs.watchtower.scope=service"
 
 volumes:
   open-webui-data:
