@@ -15,6 +15,8 @@ Before deploying Carian Observatory, ensure you have:
 - **Git** (for cloning repository)
 - **Basic terminal/command line** familiarity
 
+**🍎 Platform Note**: This repository was designed with **macOS usage in mind**. Windows and Linux users may experience variations in certain setup steps (YMMV - Your Mileage May Vary).
+
 ### 🔐 Security Management Options
 
 Choose your preferred secret management approach:
