@@ -60,6 +60,9 @@ session_*
 auth_state*
 token_cache*
 
+# Task management directories
+/tasks/
+
 # =============================================================================
 # NEW TEMPLATE SYSTEM - DIRECTORY-LEVEL EXCLUSIONS
 # =============================================================================
