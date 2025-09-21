@@ -1,0 +1,277 @@
+#!/bin/bash
+
+# Automated Hosts Entry Management for Carian Observatory
+# Adds new service domains to /etc/hosts automatically
+
+set -euo pipefail
+
+# Configuration
+HOSTS_FILE="/etc/hosts"
+BACKUP_DIR="$HOME/.carian-observatory-backups"
+DOMAIN_PREFIX="# Carian Observatory Services"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Usage function
+usage() {
+    cat << EOF
+Usage: $0 <domain> [options]
+
+Add a domain to /etc/hosts for local development
+
+Arguments:
+    domain       Domain to add (e.g., glance.yourdomain.com)
+
+Options:
+    -h, --help   Show this help message
+    -i, --ip     IP address to use (default: auto-detect current internal IP)
+    --remove     Remove domain from hosts file
+    --list       List all Carian Observatory domains
+
+Examples:
+    $0 glance.yourdomain.com
+    $0 api.yourdomain.com --ip 192.168.1.100
+    $0 old.yourdomain.com --remove
+    $0 --list
+
+EOF
+}
+
+# Create backup directory
+create_backup_dir() {
+    if [[ ! -d "$BACKUP_DIR" ]]; then
+        mkdir -p "$BACKUP_DIR"
+        log_info "Created backup directory: $BACKUP_DIR"
+    fi
+}
+
+# Backup hosts file
+backup_hosts() {
+    local backup_file="$BACKUP_DIR/hosts.backup.$(date +%Y%m%d_%H%M%S)"
+    cp "$HOSTS_FILE" "$backup_file"
+    log_info "Backed up hosts file to: $backup_file"
+}
+
+# Check if domain exists in hosts
+domain_exists() {
+    local domain="$1"
+    grep -q "\\b$domain\\b" "$HOSTS_FILE"
+}
+
+# Add domain to hosts
+add_domain() {
+    local domain="$1"
+    local ip="${2:-127.0.0.1}"
+
+    log_info "Adding domain: $domain → $ip"
+
+    # Check if domain already exists
+    if domain_exists "$domain"; then
+        log_warning "Domain $domain already exists in $HOSTS_FILE"
+        return 0
+    fi
+
+    # Create backup
+    create_backup_dir
+    backup_hosts
+
+    # Check if we have our section marker
+    if ! grep -q "$DOMAIN_PREFIX" "$HOSTS_FILE"; then
+        echo "" | sudo tee -a "$HOSTS_FILE" > /dev/null
+        echo "$DOMAIN_PREFIX" | sudo tee -a "$HOSTS_FILE" > /dev/null
+    fi
+
+    # Add the domain
+    echo "$ip $domain" | sudo tee -a "$HOSTS_FILE" > /dev/null
+
+    log_success "Added $domain to hosts file"
+}
+
+# Remove domain from hosts
+remove_domain() {
+    local domain="$1"
+
+    log_info "Removing domain: $domain"
+
+    # Check if domain exists
+    if ! domain_exists "$domain"; then
+        log_warning "Domain $domain not found in $HOSTS_FILE"
+        return 0
+    fi
+
+    # Create backup
+    create_backup_dir
+    backup_hosts
+
+    # Remove the domain (macOS sed syntax)
+    sudo sed -i '' "/\\b$domain\\b/d" "$HOSTS_FILE"
+
+    log_success "Removed $domain from hosts file"
+}
+
+# List Carian Observatory domains
+list_domains() {
+    log_info "Carian Observatory domains in $HOSTS_FILE:"
+
+    if grep -q "$DOMAIN_PREFIX" "$HOSTS_FILE"; then
+        # Get lines after the marker
+        sed -n "/$DOMAIN_PREFIX/,\$p" "$HOSTS_FILE" | tail -n +2 | grep -E "^[0-9]" | while read -r line; do
+            echo "  $line"
+        done
+    else
+        log_warning "No Carian Observatory domains found"
+    fi
+}
+
+# Validate domain format
+validate_domain() {
+    local domain="$1"
+    if [[ ! "$domain" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$ ]]; then
+        log_error "Invalid domain format: $domain"
+        exit 1
+    fi
+}
+
+# Auto-detect current internal IP address
+get_current_ip() {
+    # Try to get the current internal IP address
+    local ip
+
+    # Method 1: Route to 8.8.8.8 (most reliable)
+    ip=$(route get 8.8.8.8 2>/dev/null | grep interface: | awk '{print $2}' | head -1)
+    if [[ -n "$ip" ]]; then
+        ip=$(ifconfig "$ip" 2>/dev/null | grep 'inet ' | awk '{print $2}' | head -1)
+        if [[ -n "$ip" && "$ip" != "127.0.0.1" ]]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # Method 2: Check common interface names
+    for interface in en0 en1 eth0 eth1; do
+        ip=$(ifconfig "$interface" 2>/dev/null | grep 'inet ' | awk '{print $2}' | head -1)
+        if [[ -n "$ip" && "$ip" != "127.0.0.1" ]]; then
+            echo "$ip"
+            return 0
+        fi
+    done
+
+    # Method 3: Parse ifconfig for private IP ranges
+    ip=$(ifconfig 2>/dev/null | grep 'inet ' | awk '{print $2}' | grep -E '^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | head -1)
+    if [[ -n "$ip" ]]; then
+        echo "$ip"
+        return 0
+    fi
+
+    # Fallback to localhost
+    echo "127.0.0.1"
+}
+
+# Validate IP format
+validate_ip() {
+    local ip="$1"
+    if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        log_error "Invalid IP format: $ip"
+        exit 1
+    fi
+}
+
+# Main function
+main() {
+    local domain=""
+    local ip=""
+    local remove_mode=false
+    local list_mode=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -i|--ip)
+                ip="$2"
+                shift 2
+                ;;
+            --remove)
+                remove_mode=true
+                shift
+                ;;
+            --list)
+                list_mode=true
+                shift
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+            *)
+                if [[ -z "$domain" ]]; then
+                    domain="$1"
+                else
+                    log_error "Multiple domains specified"
+                    usage
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    # Handle list mode
+    if [[ "$list_mode" == "true" ]]; then
+        list_domains
+        exit 0
+    fi
+
+    # Validate domain
+    if [[ -z "$domain" ]]; then
+        log_error "Domain is required"
+        usage
+        exit 1
+    fi
+
+    validate_domain "$domain"
+
+    # Handle operations
+    if [[ "$remove_mode" == "true" ]]; then
+        remove_domain "$domain"
+    else
+        # Auto-detect IP if not specified
+        if [[ -z "$ip" ]]; then
+            ip=$(get_current_ip)
+            log_info "Auto-detected IP address: $ip"
+        fi
+        validate_ip "$ip"
+        add_domain "$domain" "$ip"
+    fi
+
+    log_info "Operation completed successfully"
+}
+
+# Run main function with all arguments
+main "$@"
