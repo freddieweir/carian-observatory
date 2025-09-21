@@ -146,6 +146,107 @@ server {
         proxy_buffering off;
         proxy_request_buffering off;
     }
+
+    # Iframe-friendly route for Perplexica
+    location /iframe {
+        auth_request /authelia;
+        auth_request_set $user $upstream_http_remote_user;
+        error_page 401 =302 https://${AUTH_DOMAIN}/?rd=$scheme://$http_host$request_uri;
+
+        # Remove restrictive frame options and CSP for iframe embedding
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header Content-Security-Policy;
+        add_header X-Frame-Options "ALLOWFROM https://${GLANCE_DOMAIN}" always;
+        add_header Content-Security-Policy "frame-ancestors 'self' https://${GLANCE_DOMAIN} https://*.${PRIMARY_DOMAIN};" always;
+
+        proxy_set_header Remote-User $user;
+        proxy_pass http://perplexica:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        # Important: Add headers to help with iframe compatibility
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # Enable sub_filter to inject localStorage workaround
+        sub_filter_once off;
+        sub_filter_types text/html application/javascript;
+
+        # Inject script to handle localStorage access errors in iframe context
+        sub_filter '</head>' '<script>
+(function() {
+    // localStorage workaround for iframe context
+    if (!window.localStorage) {
+        window.localStorage = {
+            _data: {},
+            setItem: function(id, val) { this._data[id] = String(val); },
+            getItem: function(id) { return this._data.hasOwnProperty(id) ? this._data[id] : null; },
+            removeItem: function(id) { delete this._data[id]; },
+            clear: function() { this._data = {}; },
+            get length() { return Object.keys(this._data).length; },
+            key: function(index) { return Object.keys(this._data)[index] || null; }
+        };
+    }
+
+    // Wrap original localStorage to catch SecurityErrors
+    const originalLocalStorage = window.localStorage;
+    const safeLocalStorage = {
+        setItem: function(key, value) {
+            try {
+                return originalLocalStorage.setItem(key, value);
+            } catch(e) {
+                console.warn("localStorage.setItem blocked in iframe:", e);
+            }
+        },
+        getItem: function(key) {
+            try {
+                return originalLocalStorage.getItem(key);
+            } catch(e) {
+                console.warn("localStorage.getItem blocked in iframe:", e);
+                return null;
+            }
+        },
+        removeItem: function(key) {
+            try {
+                return originalLocalStorage.removeItem(key);
+            } catch(e) {
+                console.warn("localStorage.removeItem blocked in iframe:", e);
+            }
+        },
+        clear: function() {
+            try {
+                return originalLocalStorage.clear();
+            } catch(e) {
+                console.warn("localStorage.clear blocked in iframe:", e);
+            }
+        }
+    };
+
+    // Override localStorage with safe wrapper
+    try {
+        Object.defineProperty(window, "localStorage", {
+            value: safeLocalStorage,
+            writable: false,
+            configurable: false
+        });
+    } catch(e) {
+        console.warn("Could not override localStorage:", e);
+    }
+})();
+</script></head>';
+    }
 }
 
 # Homepage HTTPS with Authentication
