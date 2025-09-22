@@ -2,10 +2,29 @@
 
 <img width="1000" height="563" alt="The_Three_sister" src="https://github.com/user-attachments/assets/5debed05-156c-4b42-a5e8-eade5546f593" />
 
-
 A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
 
-## Prerequisites
+## Quick Start
+
+```bash
+# Generate all configuration files from templates
+./create-all-from-templates.sh
+
+# Edit .env with your settings (generated from template)
+vim .env
+
+# Start all services
+docker compose up -d
+
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs -f [service-name]
+```
+
+<details>
+<summary><strong>📋 Prerequisites & Setup Requirements</strong></summary>
 
 Before deploying Carian Observatory, ensure you have:
 
@@ -40,26 +59,10 @@ Choose your preferred secret management approach:
 - Domain names or localhost setup
 - SSL certificate access (self-signed or CA-issued)
 
-## Quick Start
+</details>
 
-```bash
-# Generate all configuration files from templates
-./create-all-from-templates.sh
-
-# Edit .env with your settings (generated from template)
-vim .env
-
-# Start all services
-docker compose up -d
-
-# Check status
-docker compose ps
-
-# View logs
-docker compose logs -f [service-name]
-```
-
-## Services
+<details>
+<summary><strong>🏗️ Services & Architecture</strong></summary>
 
 ### Core Services
 - **Open-WebUI**: AI chat interface at `https://webui.yourdomain.com`
@@ -84,7 +87,10 @@ services/
 └── onepassword/    # 1Password Connect API for secure credential management
 ```
 
-## Configuration
+</details>
+
+<details>
+<summary><strong>⚙️ Configuration & Service Management</strong></summary>
 
 ### Enable/Disable Services
 Edit `docker-compose.yml` and comment out unwanted services:
@@ -102,7 +108,10 @@ include:
 ```
 Access at `http://localhost:8081`
 
-## 📝 Template System
+</details>
+
+<details>
+<summary><strong>📝 Template System & Security</strong></summary>
 
 Carian Observatory uses a secure template system that separates configuration templates (safe to commit) from generated files with real domains (gitignored for security).
 
@@ -189,6 +198,11 @@ The template system now covers **ALL** scripts and configurations:
 
 Total: **28 script templates** ensuring zero domain exposure (including infrastructure management)
 
+</details>
+
+<details>
+<summary><strong>🔐 SSL Certificates & Environment Variables</strong></summary>
+
 ## SSL Certificates
 
 Place certificates in `services/nginx/ssl/`:
@@ -210,6 +224,11 @@ Key variables in `.env`:
 - `AUTHELIA_STORAGE_ENCRYPTION_KEY` - 32-character hex string
 - `OPENAI_API_KEY` - OpenAI API access
 - `CLAUDE_API_KEY` - Anthropic Claude access
+
+</details>
+
+<details>
+<summary><strong>🔧 Maintenance & Troubleshooting</strong></summary>
 
 ## Maintenance
 
@@ -244,9 +263,14 @@ docker compose restart authelia
 
 **IMPORTANT**: The Open-WebUI production volume `open-webui-fw_open-webui` contains all user data and must be preserved. It's referenced as an external volume and won't be deleted by Docker Compose operations.
 
+</details>
+
 ---
 
-# 🚀 TL;DR - Most Common Commands
+<details>
+<summary><strong>🚀 TL;DR - Most Common Commands & Operations Guide</strong></summary>
+
+# TL;DR - Most Common Commands
 
 Quick reference for daily operations. All commands run from `carian-observatory/` directory.
 
@@ -391,3 +415,5 @@ export CONNECT_TOKEN="your-token"                     # Set token
 - 📊 **Visual health checks**: The health check script shows color-coded status for easy scanning
 - 🔄 **Smart restarts**: The smart restart script only restarts what's actually running
 - 🎨 **Visual design**: All scripts use emojis and clear formatting for easier scanning
+
+</details>
