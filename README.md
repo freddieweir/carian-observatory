@@ -5,6 +5,41 @@
 
 A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
 
+## Prerequisites
+
+Before deploying Carian Observatory, ensure you have:
+
+### Essential Requirements
+- **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux)
+- **Docker Compose** v2.20+ (for modular include feature)
+- **Git** (for cloning repository)
+- **Basic terminal/command line** familiarity
+
+**Platform Note**: This repository was designed with **macOS usage in mind**. Windows and Linux users may experience variations in certain setup steps (YMMV - Your Mileage May Vary).
+
+### Security Management Options
+
+Choose your preferred secret management approach:
+
+#### Option A: **1Password CLI** (Recommended)
+- 1Password account with CLI access
+- Service Account or personal vault access
+- Automatic secret injection and rotation
+
+#### Option B: **Manual Configuration**
+- Manual `.env` file management
+- Direct API key configuration
+- Good for personal deployments
+
+#### Option C: **Alternative Tools**
+- Other secret management solutions
+- Custom environment variable handling
+
+### Network Requirements
+- Available ports: 80, 443 (nginx), 8080-8090 (services)
+- Domain names or localhost setup
+- SSL certificate access (self-signed or CA-issued)
+
 ## Quick Start
 
 ```bash
@@ -30,17 +65,23 @@ docker compose logs -f [service-name]
 - **Open-WebUI**: AI chat interface at `https://webui.yourdomain.com`
 - **Perplexica**: AI-powered search at `https://perplexica.yourdomain.com`
 - **Authelia**: Authentication portal at `https://auth.yourdomain.com`
+- **Homepage**: Unified dashboard at `https://homepage.yourdomain.com`
+- **Glance**: Monitoring dashboard at `https://glance.yourdomain.com`
+- **Grafana**: Observability platform at `https://monitoring.yourdomain.com`
 - **Nginx**: Reverse proxy with SSL termination
 
 ### Architecture
 
 ```
 services/
-├── nginx/          # Reverse proxy and SSL
-├── open-webui/     # Web UI for AI models
+├── nginx/          # Reverse proxy and SSL termination
+├── authelia/       # Authentication + Redis
+├── open-webui/     # AI chat interface (production + canary)
 ├── perplexica/     # AI search (includes SearXNG)
-├── auth/           # Authelia + Redis authentication
-└── monitoring/     # Watchtower auto-updates
+├── homepage/       # Unified platform dashboard
+├── glance/         # Monitoring dashboard with RSS feeds
+├── monitoring/     # PGLA stack (Prometheus + Grafana + Loki + Alertmanager)
+└── onepassword/    # 1Password Connect API for secure credential management
 ```
 
 ## Configuration
@@ -141,10 +182,12 @@ The template system now covers **ALL** scripts and configurations:
 
 #### Service Templates (`templates/services/`)
 - **Authelia**: Full authentication configuration
-- **Nginx**: HTTPS reverse proxy configuration
-- **Homepage**: Dashboard configuration and startup scripts
+- **Nginx**: HTTPS reverse proxy configuration with all service domains
+- **Homepage**: Unified dashboard configuration and startup scripts
+- **Glance**: Monitoring dashboard configuration
+- **Monitoring**: PGLA observability stack configuration
 
-Total: **27+ script templates** ensuring zero domain exposure
+Total: **28 script templates** ensuring zero domain exposure (including infrastructure management)
 
 ## SSL Certificates
 
@@ -249,6 +292,21 @@ docker logs co-perplexica-service co-perplexica-searxng   # Search logs
 docker restart co-perplexica-service co-perplexica-searxng # Restart search
 ```
 
+### 📊 Dashboard Stack
+```bash
+docker logs co-homepage-service co-homepage-iframe-proxy  # Dashboard logs
+docker logs co-glance-service                             # Monitoring dashboard
+docker restart co-homepage-service co-glance-service      # Restart dashboards
+```
+
+### 📈 Observability Stack (PGLA)
+```bash
+docker logs co-monitoring-prometheus co-monitoring-grafana   # Core metrics
+docker logs co-monitoring-loki co-monitoring-alertmanager   # Logs & alerts
+docker restart co-monitoring-prometheus                     # Restart metrics
+docker restart co-monitoring-grafana                        # Restart dashboards
+```
+
 ### 🔄 Update Management
 ```bash
 docker logs co-ow-watchtower-service                  # Weekly production updates
@@ -294,12 +352,23 @@ export CONNECT_TOKEN="your-token"                     # Set token
 ├── 🔐 Authentication
 │   ├── co-authelia-service     (port 9091)
 │   └── co-authelia-redis       (port 6379)
-├── 🌐 Web Interface  
+├── 🌐 Web Interface
 │   ├── co-open-webui-service   (prod, port 8080)
 │   └── co-open-webui-canary    (test, port 8081)
 ├── 🔍 AI Search
 │   ├── co-perplexica-service   (port 3000)
 │   └── co-perplexica-searxng   (port 8080)
+├── 📊 Dashboard Integration
+│   ├── co-homepage-service     (port 3000)
+│   ├── co-homepage-iframe-proxy (port 3001)
+│   └── co-glance-service       (port 61208)
+├── 📈 Observability (PGLA Stack)
+│   ├── co-monitoring-prometheus (port 9090)
+│   ├── co-monitoring-grafana   (port 3000)
+│   ├── co-monitoring-loki      (port 3100)
+│   ├── co-monitoring-alertmanager (port 9093)
+│   ├── co-monitoring-cadvisor  (port 8080)
+│   └── co-monitoring-node-exporter (port 9100)
 ├── 🌉 Infrastructure
 │   ├── co-nginx-service        (ports 80/443)
 │   ├── co-1p-connect-sync      (1Password sync)
