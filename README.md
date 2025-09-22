@@ -1,8 +1,11 @@
 # Carian Observatory
 
+A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
+
 <img width="1000" height="563" alt="The_Three_sister" src="https://github.com/user-attachments/assets/5debed05-156c-4b42-a5e8-eade5546f593" />
 
-A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
+<img width="1440" height="939" alt="CleanShot 2025-09-21 at 17 50 23" src="https://github.com/user-attachments/assets/09962829-d1ad-4e53-aa35-3aa2fa9eca6d" />
+
 
 ## Quick Start
 
