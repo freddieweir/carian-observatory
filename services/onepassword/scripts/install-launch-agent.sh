@@ -1,7 +1,19 @@
 #!/bin/bash
 # Install macOS Launch Agent for 1Password Connect Auto-Restart
+#
+# ⚠️  macOS ONLY - Uses Launch Agents (launchctl)
 
 set -e
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    echo "❌ ERROR: This script requires macOS"
+    echo "Launch Agents are a macOS-specific feature"
+    echo ""
+    echo "For other systems, use:"
+    echo "  ./auto-restart-monitor.sh start"
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_DIR="$(dirname "$SCRIPT_DIR")"

@@ -2,6 +2,16 @@
 
 These scripts provide secure management of 1Password Connect services using Touch ID authentication instead of storing credentials on disk.
 
+## 🍎 Platform Requirements
+
+**Auto-restart features require macOS** and use:
+- 🔒 **Touch ID** via 1Password CLI
+- 🔔 **Native notifications** via osascript
+- 🚀 **Launch Agents** for background monitoring
+- 💬 **Native dialogs** for user interaction
+
+**For Linux/Windows**: Use `manage-1password-connect.sh` (basic version without auto-restart)
+
 ## Security Features
 
 - ✅ **Touch ID Authentication**: Credentials fetched on-demand using biometric auth
@@ -11,7 +21,7 @@ These scripts provide secure management of 1Password Connect services using Touc
 
 ## Scripts Overview
 
-### `manage-with-auto-restart.sh` ⭐ **RECOMMENDED**
+### `manage-with-auto-restart.sh` ⭐ **RECOMMENDED** (macOS only)
 Enhanced service manager with auto-restart capabilities:
 ```bash
 # Start with optional auto-restart setup
@@ -30,7 +40,7 @@ Enhanced service manager with auto-restart capabilities:
 ./manage-with-auto-restart.sh auto-remove
 ```
 
-### `manage-1password-connect.sh`
+### `manage-1password-connect.sh` (cross-platform)
 Basic service manager with systemd-style commands:
 ```bash
 # Start services with Touch ID
@@ -60,7 +70,7 @@ Dedicated startup script that:
 4. Starts services with credentials mounted from tmpfs
 5. Cleans up override file
 
-### `auto-restart-monitor.sh`
+### `auto-restart-monitor.sh` (macOS optimized)
 Background monitor that watches container health:
 ```bash
 # Start monitoring in background
@@ -83,7 +93,7 @@ Low-level credential fetcher that:
 3. Saves to `/tmp/1password-credentials.json`
 4. Sets restrictive permissions (600)
 
-### `touchid-prompt.sh`
+### `touchid-prompt.sh` (macOS only)
 Native macOS notifications and prompts:
 ```bash
 # Show dialog and prompt for Touch ID
@@ -124,9 +134,11 @@ Native macOS notifications and prompts:
    ./manage-with-auto-restart.sh start
    ```
 
-## Auto-Restart Features
+## Auto-Restart Features (macOS Only)
 
 The auto-restart system provides automatic Touch ID authentication when containers fail:
+
+> **⚠️ Requires macOS**: Uses Launch Agents, osascript, and native Touch ID integration
 
 ### Installation
 ```bash
@@ -172,6 +184,11 @@ tail -f /tmp/1password-connect-agent.log
 - No credentials in Docker volumes
 
 ## Troubleshooting
+
+### Platform Issues
+- **macOS**: All features available including auto-restart
+- **Linux**: Use `manage-1password-connect.sh` (no auto-restart)
+- **Windows**: Use `manage-1password-connect.sh` (no auto-restart)
 
 ### "Item not found" error
 - Check the exact item name in 1Password

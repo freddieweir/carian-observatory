@@ -1,8 +1,16 @@
 #!/bin/bash
 # 1Password Connect Auto-Restart Monitor
 # Watches for container failures and automatically restarts with Touch ID
+#
+# ⚠️  macOS ONLY - Uses osascript for notifications
 
 set -e
+
+# Check if running on macOS for notification features
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    echo "⚠️  WARNING: Running on non-macOS system"
+    echo "Notifications disabled - monitoring will work but no UI alerts"
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_DIR="$(dirname "$SCRIPT_DIR")"

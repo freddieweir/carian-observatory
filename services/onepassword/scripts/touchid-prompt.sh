@@ -1,8 +1,20 @@
 #!/bin/bash
 # Touch ID Prompt with macOS Native Notifications
 # Handles user interaction for 1Password Connect authentication
+#
+# ⚠️  macOS ONLY - Uses osascript for dialogs and notifications
 
 set -e
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    echo "❌ ERROR: This script requires macOS"
+    echo "Uses osascript for native dialogs and notifications"
+    echo ""
+    echo "For other systems, use basic commands:"
+    echo "  ./manage-1password-connect.sh start"
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

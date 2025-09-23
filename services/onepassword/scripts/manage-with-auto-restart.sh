@@ -1,8 +1,23 @@
 #!/bin/bash
 # Enhanced 1Password Connect Manager with Auto-Restart
 # Combines manual management with automatic Touch ID restart capabilities
+#
+# ⚠️  macOS ONLY - Uses Launch Agents, osascript, and Touch ID
+# For Linux/Windows, use the basic manage-1password-connect.sh instead
 
 set -e
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    echo "❌ ERROR: This script requires macOS"
+    echo "Auto-restart features use:"
+    echo "  • macOS Launch Agents"
+    echo "  • osascript for notifications"
+    echo "  • Touch ID integration"
+    echo ""
+    echo "For non-macOS systems, use: ./manage-1password-connect.sh"
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_DIR="$(dirname "$SCRIPT_DIR")"
@@ -20,7 +35,7 @@ NC='\033[0m' # No Color
 
 # Function to show usage
 usage() {
-    echo -e "${CYAN}1Password Connect Manager with Auto-Restart${NC}"
+    echo -e "${CYAN}1Password Connect Manager with Auto-Restart (macOS)${NC}"
     echo -e "${YELLOW}Usage: $0 {start|stop|restart|status|logs|health|auto-install|auto-remove}${NC}"
     echo ""
     echo "Manual Commands:"
