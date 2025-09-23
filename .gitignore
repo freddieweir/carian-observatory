@@ -87,6 +87,8 @@ services/monitoring/alertmanager/alertmanager.yml
 services/*/scripts/*
 !services/*/scripts/.gitkeep
 !services/monitoring/scripts/generate-config.sh
+!services/onepassword/scripts/*.sh
+!services/onepassword/scripts/README.md
 
 # Generated scripts directory (use templates/scripts/ instead)
 # ALL scripts are generated locally and should never be committed
@@ -320,6 +322,13 @@ container-data/
 *credential*
 *auth*
 
+# Exceptions for 1Password Connect management scripts (no secrets in these)
+!services/onepassword/
+!services/onepassword/scripts/
+!services/onepassword/scripts/*.sh
+!services/onepassword/scripts/README.md
+!services/onepassword/docker-compose.yml
+
 # But allow these common exceptions:
 !README.md
 !LICENSE
@@ -371,6 +380,9 @@ todos/
 # Development guidance files (internal only)
 CLAUDE.md
 /CLAUDE.md
+
+# GitHub workflow documentation (contains domain references)
+.github/README.md
 
 # Development and testing artifacts
 test-results/
