@@ -1,0 +1,25 @@
+# Carian Observatory Code Owners
+# Security-sensitive files require security team review
+
+# Root configuration files
+/.env.template              @security-team
+/docker-compose*.yml        @security-team
+/create-all-from-templates.sh @security-team
+
+# Template system
+/templates/                 @security-team
+
+# GitHub workflows and security configs
+/.github/                   @security-team
+/.gitleaks.toml            @security-team
+
+# Service configurations
+/services/*/docker-compose.yml @security-team
+
+# Scripts that handle secrets
+/scripts/onepassword/       @security-team
+/scripts/authentication/    @security-team
+
+# Documentation that might contain examples
+/README.md                  @security-team
+/SECURITY.md               @security-team

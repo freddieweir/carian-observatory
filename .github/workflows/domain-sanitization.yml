@@ -1,0 +1,138 @@
+name: 🔒 Domain Sanitization Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+
+jobs:
+  domain-check:
+    name: Scan for Production Domains
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up scanning environment
+      run: |
+        # Create results directory
+        mkdir -p scan-results
+
+        # Define critical domain that MUST be blocked (from environment or default)
+        BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-corporateseas.com}"
+        echo "$BLOCKED_DOMAIN" > critical-domains.txt
+
+        # Define allowed template domain
+        echo "yourdomain.com" > allowed-domains.txt
+
+        echo "🔧 Using blocked domain: $BLOCKED_DOMAIN"
+      env:
+        PRODUCTION_DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
+
+    - name: Scan for production domains
+      run: |
+        #!/bin/bash
+        set -e
+
+        echo "🔍 Scanning for production domain exposure..."
+
+        # Files to scan (exclude binary files and safe directories)
+        SCAN_FILES=$(find . -type f \
+          -name "*.yml" -o -name "*.yaml" -o -name "*.md" -o -name "*.sh" \
+          -o -name "*.json" -o -name "*.toml" -o -name "*.env*" \
+          -o -name "*.conf" -o -name "*.config" \
+          | grep -v ".git/" \
+          | grep -v "node_modules/" \
+          | grep -v ".github/workflows/" \
+          | sort)
+
+        # Critical check: corporateseas.com MUST NOT appear anywhere
+        CRITICAL_VIOLATIONS=""
+        while IFS= read -r domain; do
+          echo "🚨 Checking for critical domain: $domain"
+
+          MATCHES=$(echo "$SCAN_FILES" | xargs grep -l "$domain" 2>/dev/null || true)
+
+          if [ ! -z "$MATCHES" ]; then
+            echo "❌ CRITICAL VIOLATION: Found $domain in:"
+            echo "$MATCHES" | while read -r file; do
+              echo "  📄 $file"
+              grep -n "$domain" "$file" | head -5 | while read -r line; do
+                echo "    🔍 Line: $line"
+              done
+            done
+            CRITICAL_VIOLATIONS="$CRITICAL_VIOLATIONS$domain "
+          else
+            echo "✅ No instances of $domain found"
+          fi
+        done < critical-domains.txt
+
+        # Template compliance check
+        echo "📋 Checking template compliance..."
+        TEMPLATE_VIOLATIONS=""
+
+        # Check that files in templates/ only use yourdomain.com
+        if [ -d "templates/" ]; then
+          TEMPLATE_FILES=$(find templates/ -type f -name "*.template" 2>/dev/null || true)
+
+          if [ ! -z "$TEMPLATE_FILES" ]; then
+            for file in $TEMPLATE_FILES; do
+              # Check for any .com domain that isn't yourdomain.com
+              DOMAIN_MATCHES=$(grep -n "\.[a-zA-Z0-9-]\+\.com" "$file" 2>/dev/null | grep -v "yourdomain.com" || true)
+
+              if [ ! -z "$DOMAIN_MATCHES" ]; then
+                echo "❌ Template violation in $file:"
+                echo "$DOMAIN_MATCHES"
+                TEMPLATE_VIOLATIONS="$TEMPLATE_VIOLATIONS$file "
+              fi
+            done
+          fi
+        fi
+
+        # Generate scan report
+        echo "📊 DOMAIN SCAN REPORT" > scan-results/domain-report.txt
+        echo "===================" >> scan-results/domain-report.txt
+        echo "Scan Date: $(date)" >> scan-results/domain-report.txt
+        echo "Files Scanned: $(echo "$SCAN_FILES" | wc -l)" >> scan-results/domain-report.txt
+        echo "" >> scan-results/domain-report.txt
+
+        # Final verdict
+        if [ ! -z "$CRITICAL_VIOLATIONS" ] || [ ! -z "$TEMPLATE_VIOLATIONS" ]; then
+          echo "Status: ❌ FAILED" >> scan-results/domain-report.txt
+          echo "" >> scan-results/domain-report.txt
+
+          if [ ! -z "$CRITICAL_VIOLATIONS" ]; then
+            echo "🚨 CRITICAL DOMAIN VIOLATIONS:" >> scan-results/domain-report.txt
+            echo "$CRITICAL_VIOLATIONS" >> scan-results/domain-report.txt
+            echo "" >> scan-results/domain-report.txt
+          fi
+
+          if [ ! -z "$TEMPLATE_VIOLATIONS" ]; then
+            echo "📋 TEMPLATE VIOLATIONS:" >> scan-results/domain-report.txt
+            echo "$TEMPLATE_VIOLATIONS" >> scan-results/domain-report.txt
+          fi
+
+          cat scan-results/domain-report.txt
+          echo ""
+          echo "🚨 SECURITY FAILURE: Production domains or template violations detected!"
+          echo "📝 Fix these issues before merging:"
+          echo "   1. Remove all instances of corporateseas.com"
+          echo "   2. Ensure templates only use yourdomain.com"
+          echo "   3. Verify generated files are properly gitignored"
+          exit 1
+        else
+          echo "Status: ✅ PASSED" >> scan-results/domain-report.txt
+          echo "✅ All domain checks passed!"
+        fi
+
+    - name: Upload scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: domain-scan-results
+        path: scan-results/
+        retention-days: 30
