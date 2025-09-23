@@ -73,6 +73,7 @@ token_cache*
 !.env.example
 
 # Generated service configurations (use templates/ instead)
+services/*/configs/
 services/*/configs/*
 !services/*/configs/.gitkeep
 !services/*/configs/*.template
