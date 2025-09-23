@@ -89,14 +89,8 @@ services/*/scripts/*
 !services/monitoring/scripts/generate-config.sh
 
 # Generated scripts directory (use templates/scripts/ instead)
-scripts/*
-!scripts/.gitkeep
-
-# Exception: Allow specific script directories for service-specific scripts
-!scripts/glance/
-scripts/glance/*
-!scripts/glance/*.template
-!scripts/glance/create-scripts.sh
+scripts/
+!scripts/infrastructure/
 
 # Allow templates directory and all contents (SAFE TO COMMIT)
 !templates/

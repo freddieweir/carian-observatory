@@ -30,7 +30,7 @@
         icon: si-github
 
     - 1Password:
-        href: https://freddieweir.1password.com
+        href: https://yourdomain.1password.com
         description: Password vault
         icon: si-1password
 
@@ -168,7 +168,7 @@
 
 - Documentation:
     - Authelia Docs:
-        href: https://www.authelia.com/
+        href: https://authelia.yourdomain.com/
         description: Authentication system documentation
         icon: si-authelia
 
@@ -178,12 +178,12 @@
         icon: si-homeassistant
 
     - Docker Hub:
-        href: https://hub.docker.com/
+        href: https://hub.yourdomain.com/
         description: Container registry
         icon: si-docker
 
     - ProtonDB:
-        href: https://www.protondb.com/
+        href: https://protondb.yourdomain.com/
         description: Gaming compatibility database
         icon: si-steam
 
@@ -220,7 +220,7 @@
 
 - 💡 Personal Favorites:
     - ChatGPT:
-        href: https://chat.openai.com
+        href: https://chat.yourdomain.com
         description: OpenAI ChatGPT
         icon: si-openai
 
@@ -230,7 +230,7 @@
         icon: si-perplexity
 
     - Anthropic Console:
-        href: https://console.anthropic.com
+        href: https://console.yourdomain.com
         description: Claude API console
         icon: si-anthropic
 
@@ -245,7 +245,7 @@
         icon: si-reddit
 
     - Hacker News:
-        href: https://news.ycombinator.com
+        href: https://news.yourdomain.com
         description: Tech news
         icon: si-ycombinator
 
