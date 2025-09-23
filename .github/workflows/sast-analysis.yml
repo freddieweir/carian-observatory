@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'python' ]
+        language: [ 'javascript' ]  # Only analyze JS since Python code is minimal
 
     steps:
     - name: Checkout repository

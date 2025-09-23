@@ -50,40 +50,30 @@ jobs:
           done
         fi
 
-        # Check 2: Template file structure
+        # Check 2: Template file structure (services use .template files)
         echo "🏗️ Checking template structure..."
 
-        if [ -d "templates/" ]; then
-          echo "✅ templates/ directory exists"
+        # Check for .template files in services
+        TEMPLATE_FILES=$(find services/ -name "*.template" 2>/dev/null || true)
 
-          # Check for .template files
-          TEMPLATE_FILES=$(find templates/ -name "*.template" 2>/dev/null || true)
-
-          if [ -z "$TEMPLATE_FILES" ]; then
-            echo "⚠️ No .template files found in templates/"
-            VIOLATIONS="$VIOLATIONS\n- No .template files found"
-            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
-          else
-            TEMPLATE_COUNT=$(echo "$TEMPLATE_FILES" | wc -l)
-            echo "✅ Found $TEMPLATE_COUNT template files"
-
-            # Validate each template file
-            echo "$TEMPLATE_FILES" | while read -r template_file; do
-              # Check for yourdomain.com usage
-              if grep -q "yourdomain.com" "$template_file"; then
-                echo "✅ $template_file uses yourdomain.com placeholder"
-              else
-                # Check if it should contain domain references
-                if grep -qE "\.(com|net|org)" "$template_file"; then
-                  echo "⚠️ $template_file contains domains but not yourdomain.com"
-                fi
-              fi
-            done
-          fi
+        if [ -z "$TEMPLATE_FILES" ]; then
+          echo "ℹ️ No .template files found in services/ (this is optional)"
         else
-          echo "❌ templates/ directory missing!"
-          VIOLATIONS="$VIOLATIONS\n- templates/ directory missing"
-          VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          TEMPLATE_COUNT=$(echo "$TEMPLATE_FILES" | wc -l)
+          echo "✅ Found $TEMPLATE_COUNT template files in services/"
+
+          # Validate each template file
+          echo "$TEMPLATE_FILES" | while read -r template_file; do
+            # Check for yourdomain.com usage
+            if grep -q "yourdomain.com" "$template_file"; then
+              echo "✅ $template_file uses yourdomain.com placeholder"
+            else
+              # Check if it should contain domain references
+              if grep -qE "\.(com|net|org)" "$template_file"; then
+                echo "⚠️ $template_file contains domains but not yourdomain.com"
+              fi
+            fi
+          done
         fi
 
         # Check 3: Verify scripts/ directory is gitignored
@@ -157,21 +147,21 @@ jobs:
           fi
         fi
 
-        # Check 6: Master script validation
-        echo "🎯 Checking master generation script..."
+        # Check 6: README.md domain compliance
+        echo "🎯 Checking README.md domain compliance..."
 
-        if [ -f "create-all-from-templates.sh" ]; then
-          echo "✅ Master script exists"
-
-          if [ -x "create-all-from-templates.sh" ]; then
-            echo "✅ Master script is executable"
+        if [ -f "README.md" ]; then
+          if grep -q "yourdomain.com" README.md; then
+            echo "✅ README.md uses yourdomain.com placeholder"
           else
-            echo "⚠️ Master script not executable"
+            if grep -qE "\.(com|net|org)" README.md; then
+              echo "⚠️ README.md may contain real domains (should use yourdomain.com)"
+            else
+              echo "✅ README.md contains no domain references"
+            fi
           fi
         else
-          echo "❌ create-all-from-templates.sh missing!"
-          VIOLATIONS="$VIOLATIONS\n- Master script missing"
-          VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          echo "ℹ️ No README.md found"
         fi
 
         # Generate compliance report

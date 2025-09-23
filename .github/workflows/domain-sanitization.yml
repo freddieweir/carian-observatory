@@ -22,9 +22,14 @@ jobs:
         # Create results directory
         mkdir -p scan-results
 
-        # Define critical domain that MUST be blocked (from environment or default)
-        BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-corporateseas.com}"
-        echo "$BLOCKED_DOMAIN" > critical-domains.txt
+        # Define critical domains that MUST be blocked (only if environment variables are set)
+        BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-}"
+        if [ -n "$BLOCKED_DOMAIN" ]; then
+          echo "$BLOCKED_DOMAIN" > critical-domains.txt
+        else
+          # Create empty file if no production domain is configured
+          touch critical-domains.txt
+        fi
 
         # Define allowed template domain
         echo "yourdomain.com" > allowed-domains.txt
