@@ -89,8 +89,9 @@ services/*/scripts/*
 !services/monitoring/scripts/generate-config.sh
 
 # Generated scripts directory (use templates/scripts/ instead)
-scripts/
+scripts/*
 !scripts/infrastructure/
+!scripts/*.template
 
 # Allow templates directory and all contents (SAFE TO COMMIT)
 !templates/
@@ -328,7 +329,6 @@ container-data/
 !Dockerfile*
 !docker-compose*.yml
 !Makefile
-!scripts/
 !docs/
 
 # Allow template directory and all contents
