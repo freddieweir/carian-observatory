@@ -439,6 +439,9 @@ _site/
 tasks/
 temporary-memory/
 
+# Sensitive documentation with real domains/secrets (never commit)
+readmes/
+
 # =============================================================================
 # TEMPLATE SYSTEM SUMMARY
 # =============================================================================
