@@ -89,9 +89,8 @@ services/*/scripts/*
 !services/monitoring/scripts/generate-config.sh
 
 # Generated scripts directory (use templates/scripts/ instead)
-scripts/*
-!scripts/infrastructure/
-!scripts/*.template
+# ALL scripts are generated locally and should never be committed
+scripts/
 
 # Allow templates directory and all contents (SAFE TO COMMIT)
 !templates/
