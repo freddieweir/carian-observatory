@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+echo "📋 Validating Carian Observatory Template System"
+echo "=============================================="
+
+ISSUES=0
+
+# Check template directory exists
+if [ ! -d "templates/" ]; then
+    echo "❌ templates/ directory missing"
+    ISSUES=$((ISSUES + 1))
+else
+    echo "✅ templates/ directory exists"
+fi
+
+# Check for .template files
+TEMPLATE_COUNT=$(find templates/ -name "*.template" 2>/dev/null | wc -l)
+echo "📁 Found $TEMPLATE_COUNT template files"
+
+# Check master script
+if [ ! -f "create-all-from-templates.sh" ]; then
+    echo "❌ Master generation script missing"
+    ISSUES=$((ISSUES + 1))
+elif [ ! -x "create-all-from-templates.sh" ]; then
+    echo "⚠️ Master script not executable"
+    chmod +x create-all-from-templates.sh
+    echo "✅ Fixed permissions"
+else
+    echo "✅ Master script ready"
+fi
+
+# Validate template files use yourdomain.com
+echo "🔍 Validating template domains..."
+find templates/ -name "*.template" | while read -r file; do
+    if grep -q "\.com" "$file" && ! grep -q "yourdomain.com" "$file"; then
+        echo "⚠️ $file contains domains other than yourdomain.com"
+    fi
+done
+
+if [ $ISSUES -eq 0 ]; then
+    echo "✅ Template system validation passed"
+else
+    echo "❌ Template system has $ISSUES issues"
+    exit 1
+fi

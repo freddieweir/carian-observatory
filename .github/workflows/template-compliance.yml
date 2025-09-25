@@ -147,7 +147,71 @@ jobs:
           fi
         fi
 
-        # Check 6: README.md domain compliance
+        # Check 6: Template/Services synchronization
+        echo "🔄 Checking template/services synchronization..."
+
+        if [ -d "services/" ] && [ -d "templates/services/" ]; then
+          # Check for services missing from templates
+          SERVICES_LIST=$(find services/ -mindepth 1 -maxdepth 1 -type d | sed 's|services/||' | sort)
+          TEMPLATES_LIST=$(find templates/services/ -mindepth 1 -maxdepth 1 -type d | sed 's|templates/services/||' | sort)
+
+          MISSING_TEMPLATES=$(comm -23 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
+
+          if [ ! -z "$MISSING_TEMPLATES" ]; then
+            echo "❌ Services missing from templates/:"
+            echo "$MISSING_TEMPLATES" | while read -r missing; do
+              echo "  - $missing"
+            done
+            VIOLATIONS="$VIOLATIONS\n- Missing service templates: $(echo "$MISSING_TEMPLATES" | tr '\n' ' ')"
+            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          else
+            echo "✅ All services have corresponding templates"
+          fi
+
+          # Check for outdated templates (templates without corresponding services)
+          EXTRA_TEMPLATES=$(comm -13 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
+
+          if [ ! -z "$EXTRA_TEMPLATES" ]; then
+            echo "⚠️ Template directories without corresponding services:"
+            echo "$EXTRA_TEMPLATES" | while read -r extra; do
+              echo "  - $extra"
+            done
+          fi
+        fi
+
+        # Check 7: Script template synchronization
+        echo "📜 Checking script template synchronization..."
+
+        if [ -d "scripts/" ] && [ -d "templates/scripts/" ]; then
+          # Find all .sh files in scripts/ and corresponding .template files
+          SCRIPT_FILES=$(find scripts/ -name "*.sh" | sed 's|scripts/||; s|\.sh$||' | sort)
+          TEMPLATE_FILES=$(find templates/scripts/ -name "*.sh.template" | sed 's|templates/scripts/||; s|\.sh\.template$||' | sort)
+
+          MISSING_SCRIPT_TEMPLATES=$(comm -23 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
+
+          if [ ! -z "$MISSING_SCRIPT_TEMPLATES" ]; then
+            echo "❌ Scripts missing template versions:"
+            echo "$MISSING_SCRIPT_TEMPLATES" | while read -r missing; do
+              echo "  - $missing.sh"
+            done
+            VIOLATIONS="$VIOLATIONS\n- Missing script templates: $(echo "$MISSING_SCRIPT_TEMPLATES" | tr '\n' ' ')"
+            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          else
+            echo "✅ All scripts have corresponding templates"
+          fi
+
+          # Check for outdated script templates
+          EXTRA_SCRIPT_TEMPLATES=$(comm -13 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
+
+          if [ ! -z "$EXTRA_SCRIPT_TEMPLATES" ]; then
+            echo "⚠️ Script templates without corresponding scripts:"
+            echo "$EXTRA_SCRIPT_TEMPLATES" | while read -r extra; do
+              echo "  - $extra.sh.template"
+            done
+          fi
+        fi
+
+        # Check 8: README.md domain compliance
         echo "🎯 Checking README.md domain compliance..."
 
         if [ -f "README.md" ]; then
@@ -181,6 +245,9 @@ jobs:
           echo "2. Ensure template files use yourdomain.com"
           echo "3. Remove any tracked files from scripts/ and services/*/configs/"
           echo "4. Verify container names use co- prefix"
+          echo "5. Create missing service templates in templates/services/"
+          echo "6. Create missing script templates in templates/scripts/"
+          echo "7. Remove outdated templates if services/scripts no longer exist"
           echo ""
           exit 1
         else
