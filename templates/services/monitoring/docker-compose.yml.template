@@ -35,8 +35,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=prometheus"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=prometheus"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -63,8 +63,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=grafana"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=grafana"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 30s
@@ -92,8 +92,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=cadvisor"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=cadvisor"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/healthz"]
       interval: 30s
@@ -118,8 +118,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=node-exporter"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=node-exporter"
 
   # Redis Exporter - Redis metrics for Authelia
   redis-exporter:
@@ -133,8 +133,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=redis-exporter"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=redis-exporter"
     depends_on:
       - prometheus
 
@@ -152,8 +152,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=loki"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=loki"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
       interval: 30s
@@ -173,8 +173,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=promtail"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=promtail"
     depends_on:
       - loki
 
@@ -194,8 +194,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.service=monitoring"
-      - "com.carian-observatory.component=alertmanager"
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=alertmanager"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
       interval: 30s
@@ -223,8 +223,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.watchtower.scope=service"
-      - "com.carian-observatory.watchtower.schedule=daily"
+      - "com.${COMPOSE_PROJECT_NAME}.watchtower.scope=service"
+      - "com.${COMPOSE_PROJECT_NAME}.watchtower.schedule=daily"
     command: >
       --scope service
       ${USER_PREFIX}-open-webui-service
@@ -254,8 +254,8 @@ services:
     networks:
       - app-network
     labels:
-      - "com.carian-observatory.watchtower.scope=canary"
-      - "com.carian-observatory.watchtower.schedule=hourly"
+      - "com.${COMPOSE_PROJECT_NAME}.watchtower.scope=canary"
+      - "com.${COMPOSE_PROJECT_NAME}.watchtower.schedule=hourly"
     command: >
       --scope canary
       ${USER_PREFIX}-open-webui-canary

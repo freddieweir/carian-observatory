@@ -25,7 +25,7 @@
         ping: auth.yourdomain.com
 
     - GitHub Carian:
-        href: https://github.com/freddieweir/carian-observatory
+        href: https://github.com/yourusername/yourproject
         description: Repo & issues
         icon: si-github
 

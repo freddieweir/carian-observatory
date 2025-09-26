@@ -15,14 +15,14 @@ pages:
           - type: rss
             title: "Tech News"
             feeds:
-              - url: ${RSS_FEED_TECH_NEWS:-https://feeds.feedburner.com/oreilly/radar}
-                title: "O'Reilly Radar"
-              - url: ${RSS_FEED_AI_NEWS:-https://www.artificialintelligence-news.com/feed/}
+              - url: ${RSS_FEED_TECH_NEWS:-https://feeds.example.com/tech/feed}
+                title: "Tech News"
+              - url: ${RSS_FEED_AI_NEWS:-https://feeds.example.com/ai/feed}
                 title: "AI News"
-              - url: ${RSS_FEED_HOMELAB:-https://www.reddit.com/r/homelab/.rss}
-                title: "Homelab Reddit"
-              - url: ${RSS_FEED_SELFHOSTED:-https://www.reddit.com/r/selfhosted/.rss}
-                title: "Self-hosted Reddit"
+              - url: ${RSS_FEED_HOMELAB:-https://feeds.example.com/homelab/feed}
+                title: "Homelab Feed"
+              - url: ${RSS_FEED_SELFHOSTED:-https://feeds.example.com/selfhosted/feed}
+                title: "Self-hosted Feed"
             limit: 12
             collapse-after: 8
 

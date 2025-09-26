@@ -33,8 +33,8 @@ services:
       retries: 3
       start_period: 30s
     labels:
-      - "com.carian-observatory.service=onepassword-connect-sync"
-      - "com.carian-observatory.description=1Password Connect Server - Sync Component"
+      - "com.${COMPOSE_PROJECT_NAME}.service=onepassword-connect-sync"
+      - "com.${COMPOSE_PROJECT_NAME}.description=1Password Connect Server - Sync Component"
 
   onepassword-connect-api:
     image: 1password/connect-api:latest
@@ -65,8 +65,8 @@ services:
       retries: 3
       start_period: 45s
     labels:
-      - "com.carian-observatory.service=onepassword-connect-api"
-      - "com.carian-observatory.description=1Password Connect Server - API Component"
+      - "com.${COMPOSE_PROJECT_NAME}.service=onepassword-connect-api"
+      - "com.${COMPOSE_PROJECT_NAME}.description=1Password Connect Server - API Component"
 
 networks:
   # Internal network for Connect Server components
@@ -74,8 +74,8 @@ networks:
     driver: bridge
     internal: true
     labels:
-      - "com.carian-observatory.network=onepassword-internal"
-      - "com.carian-observatory.description=Isolated network for 1Password Connect components"
+      - "com.${COMPOSE_PROJECT_NAME}.network=onepassword-internal"
+      - "com.${COMPOSE_PROJECT_NAME}.description=Isolated network for 1Password Connect components"
 
   # Connect to main application network for service access
   carian-observatory_app-network:
@@ -86,8 +86,8 @@ volumes:
   onepassword-data:
     driver: local
     labels:
-      - "com.carian-observatory.volume=onepassword-data"
-      - "com.carian-observatory.description=1Password Connect Server encrypted data cache"
+      - "com.${COMPOSE_PROJECT_NAME}.volume=onepassword-data"
+      - "com.${COMPOSE_PROJECT_NAME}.description=1Password Connect Server encrypted data cache"
 
 # Security Notes:
 # 1. The credentials file is mounted read-only
