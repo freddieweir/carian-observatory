@@ -15,13 +15,13 @@ pages:
           - type: rss
             title: "Tech News"
             feeds:
-              - url: ${RSS_FEED_TECH_NEWS:-https://feeds.example.com/tech/feed}
+              - url: ${RSS_FEED_TECH_NEWS}
                 title: "Tech News"
-              - url: ${RSS_FEED_AI_NEWS:-https://feeds.example.com/ai/feed}
+              - url: ${RSS_FEED_AI_NEWS}
                 title: "AI News"
-              - url: ${RSS_FEED_HOMELAB:-https://feeds.example.com/homelab/feed}
+              - url: ${RSS_FEED_HOMELAB}
                 title: "Homelab Feed"
-              - url: ${RSS_FEED_SELFHOSTED:-https://feeds.example.com/selfhosted/feed}
+              - url: ${RSS_FEED_SELFHOSTED}
                 title: "Self-hosted Feed"
             limit: 12
             collapse-after: 8
