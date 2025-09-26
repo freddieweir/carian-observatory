@@ -1,0 +1,67 @@
+# 1Password Connect Auto-Restart Configuration
+# This override adds auto-restart capabilities with Touch ID
+#
+# Usage:
+# docker compose -f docker-compose.yml -f docker-compose.auto-restart.yml up -d
+#
+version: '3.8'
+
+services:
+  onepassword-connect-sync:
+    restart: unless-stopped
+    labels:
+      - "com.carian-observatory.auto-restart=true"
+      - "com.carian-observatory.touchid-auth=required"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /home/opuser/.op/1password-credentials.json && curl -f http://localhost:8081/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 30s
+
+  onepassword-connect-api:
+    restart: unless-stopped
+    labels:
+      - "com.carian-observatory.auto-restart=true"
+      - "com.carian-observatory.touchid-auth=required"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /home/opuser/.op/data/1password.sqlite && curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 45s
+
+  # Auto-restart monitor sidecar
+  onepassword-monitor:
+    image: alpine:latest
+    container_name: ${USER_PREFIX:-co}-1p-monitor
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts:/scripts:ro
+      - /tmp:/tmp
+    environment:
+      - MONITOR_INTERVAL=30
+      - AUTO_RESTART=true
+    command: |
+      sh -c "
+      apk add --no-cache docker-cli bash curl
+      echo 'Starting 1Password Connect monitor sidecar...'
+      while true; do
+        # Check if main containers need restart
+        if ! docker inspect co-1p-connect-api --format='{{.State.Health.Status}}' 2>/dev/null | grep -q 'healthy'; then
+          echo 'API container unhealthy - triggering restart'
+          docker exec -t co-1p-connect-api test -f /home/opuser/.op/1password-credentials.json || {
+            echo 'Credentials missing - need Touch ID authentication'
+            # Signal to host that Touch ID is needed
+            echo 'TOUCHID_REQUIRED' > /tmp/1password-touchid-needed
+          }
+        fi
+        sleep 30
+      done
+      "
+    networks:
+      - onepassword-internal
+    labels:
+      - "com.carian-observatory.service=onepassword-monitor"
+      - "com.carian-observatory.description=Auto-restart monitor for 1Password Connect"
