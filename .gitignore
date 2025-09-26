@@ -73,6 +73,7 @@ token_cache*
 !.env.example
 
 # Generated service configurations (use templates/ instead)
+services/*/configs/
 services/*/configs/*
 !services/*/configs/.gitkeep
 !services/*/configs/*.template
@@ -88,14 +89,8 @@ services/*/scripts/*
 !services/monitoring/scripts/generate-config.sh
 
 # Generated scripts directory (use templates/scripts/ instead)
-scripts/*
-!scripts/.gitkeep
-
-# Exception: Allow specific script directories for service-specific scripts
-!scripts/glance/
-scripts/glance/*
-!scripts/glance/*.template
-!scripts/glance/create-scripts.sh
+# ALL scripts are generated locally and should never be committed
+scripts/
 
 # Allow templates directory and all contents (SAFE TO COMMIT)
 !templates/
@@ -333,7 +328,6 @@ container-data/
 !Dockerfile*
 !docker-compose*.yml
 !Makefile
-!scripts/
 !docs/
 
 # Allow template directory and all contents
@@ -444,6 +438,9 @@ _site/
 # Task tracking and project documentation that may contain specific domains
 tasks/
 temporary-memory/
+
+# Sensitive documentation with real domains/secrets (never commit)
+readmes/
 
 # =============================================================================
 # TEMPLATE SYSTEM SUMMARY

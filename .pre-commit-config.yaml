@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: domain-check
+        name: Check for production domains
+        entry: bash -c 'BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-corporateseas.com}"; if grep -r "${BLOCKED_DOMAIN//\./\\.}" .; then echo "❌ Production domain ($BLOCKED_DOMAIN) found!"; exit 1; fi'
+        language: system
+
+      - id: template-check
+        name: Validate template system
+        entry: bash -c 'if [ -d "scripts/" ] && [ "$(git ls-files scripts/ | wc -l)" -gt 0 ]; then echo "❌ scripts/ should not be tracked"; exit 1; fi'
+        language: system
+
+      - id: container-naming
+        name: Check container naming convention
+        entry: bash -c 'if find . -name "docker-compose*.yml" -exec grep -H "container_name:" {} \; | grep -v "co-"; then echo "❌ Containers should use co- prefix"; exit 1; fi'
+        language: system

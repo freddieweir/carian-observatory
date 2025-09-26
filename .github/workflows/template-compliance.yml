@@ -1,0 +1,255 @@
+name: 📋 Template System Compliance
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  template-check:
+    name: Template Structure Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Validate template system
+      run: |
+        #!/bin/bash
+        set -e
+
+        echo "📋 Validating Carian Observatory template system..."
+
+        # Initialize violation tracking
+        VIOLATIONS=""
+        VIOLATION_COUNT=0
+
+        # Check 1: Verify .gitignore excludes generated files
+        echo "🔍 Checking .gitignore compliance..."
+
+        REQUIRED_IGNORES=(
+          "scripts/"
+          "services/\*/configs/"
+          ".env"
+          "CLAUDE.md"
+        )
+
+        if [ ! -f ".gitignore" ]; then
+          echo "❌ .gitignore file missing!"
+          VIOLATIONS="$VIOLATIONS\n- Missing .gitignore file"
+          VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+        else
+          for ignore_pattern in "${REQUIRED_IGNORES[@]}"; do
+            if ! grep -q "^$ignore_pattern" .gitignore; then
+              echo "❌ .gitignore missing pattern: $ignore_pattern"
+              VIOLATIONS="$VIOLATIONS\n- .gitignore missing: $ignore_pattern"
+              VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+            else
+              echo "✅ .gitignore includes: $ignore_pattern"
+            fi
+          done
+        fi
+
+        # Check 2: Template file structure (services use .template files)
+        echo "🏗️ Checking template structure..."
+
+        # Check for .template files in services
+        TEMPLATE_FILES=$(find services/ -name "*.template" 2>/dev/null || true)
+
+        if [ -z "$TEMPLATE_FILES" ]; then
+          echo "ℹ️ No .template files found in services/ (this is optional)"
+        else
+          TEMPLATE_COUNT=$(echo "$TEMPLATE_FILES" | wc -l)
+          echo "✅ Found $TEMPLATE_COUNT template files in services/"
+
+          # Validate each template file
+          echo "$TEMPLATE_FILES" | while read -r template_file; do
+            # Check for yourdomain.com usage
+            if grep -q "yourdomain.com" "$template_file"; then
+              echo "✅ $template_file uses yourdomain.com placeholder"
+            else
+              # Check if it should contain domain references
+              if grep -qE "\.(com|net|org)" "$template_file"; then
+                echo "⚠️ $template_file contains domains but not yourdomain.com"
+              fi
+            fi
+          done
+        fi
+
+        # Check 3: Verify scripts/ directory is gitignored
+        echo "🚫 Checking scripts/ directory is not tracked..."
+
+        if [ -d "scripts/" ]; then
+          # Check if any files in scripts/ are tracked by git
+          TRACKED_SCRIPTS=$(git ls-files scripts/ 2>/dev/null || true)
+
+          if [ ! -z "$TRACKED_SCRIPTS" ]; then
+            echo "❌ Found tracked files in scripts/ directory:"
+            echo "$TRACKED_SCRIPTS"
+            VIOLATIONS="$VIOLATIONS\n- Tracked files in scripts/: $TRACKED_SCRIPTS"
+            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          else
+            echo "✅ scripts/ directory properly gitignored"
+          fi
+        fi
+
+        # Check 4: Container naming convention
+        echo "🐳 Checking container naming convention..."
+
+        DOCKER_FILES=$(find . -name "docker-compose*.yml" 2>/dev/null || true)
+
+        if [ ! -z "$DOCKER_FILES" ]; then
+          echo "$DOCKER_FILES" | while read -r compose_file; do
+            # Check for co- prefix in container names
+            CONTAINER_NAMES=$(grep -E "container_name:" "$compose_file" 2>/dev/null || true)
+
+            if [ ! -z "$CONTAINER_NAMES" ]; then
+              NON_COMPLIANT=$(echo "$CONTAINER_NAMES" | grep -v "co-" || true)
+
+              if [ ! -z "$NON_COMPLIANT" ]; then
+                echo "⚠️ Non-compliant container names in $compose_file:"
+                echo "$NON_COMPLIANT"
+              fi
+            fi
+          done
+        fi
+
+        # Check 5: Service structure validation
+        echo "🏢 Checking service structure..."
+
+        if [ -d "services/" ]; then
+          SERVICES=$(find services/ -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+
+          if [ ! -z "$SERVICES" ]; then
+            echo "$SERVICES" | while read -r service_dir; do
+              SERVICE_NAME=$(basename "$service_dir")
+
+              # Check for docker-compose.yml in service
+              if [ -f "$service_dir/docker-compose.yml" ]; then
+                echo "✅ $SERVICE_NAME has docker-compose.yml"
+              else
+                echo "⚠️ $SERVICE_NAME missing docker-compose.yml"
+              fi
+
+              # Check for configs directory
+              if [ -d "$service_dir/configs/" ]; then
+                # Check if configs are tracked (they shouldn't be)
+                TRACKED_CONFIGS=$(git ls-files "$service_dir/configs/" 2>/dev/null || true)
+
+                if [ ! -z "$TRACKED_CONFIGS" ]; then
+                  echo "❌ Tracked config files in $service_dir/configs/:"
+                  echo "$TRACKED_CONFIGS"
+                  VIOLATIONS="$VIOLATIONS\n- Tracked configs: $TRACKED_CONFIGS"
+                  VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+                fi
+              fi
+            done
+          fi
+        fi
+
+        # Check 6: Template/Services synchronization
+        echo "🔄 Checking template/services synchronization..."
+
+        if [ -d "services/" ] && [ -d "templates/services/" ]; then
+          # Check for services missing from templates
+          SERVICES_LIST=$(find services/ -mindepth 1 -maxdepth 1 -type d | sed 's|services/||' | sort)
+          TEMPLATES_LIST=$(find templates/services/ -mindepth 1 -maxdepth 1 -type d | sed 's|templates/services/||' | sort)
+
+          MISSING_TEMPLATES=$(comm -23 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
+
+          if [ ! -z "$MISSING_TEMPLATES" ]; then
+            echo "❌ Services missing from templates/:"
+            echo "$MISSING_TEMPLATES" | while read -r missing; do
+              echo "  - $missing"
+            done
+            VIOLATIONS="$VIOLATIONS\n- Missing service templates: $(echo "$MISSING_TEMPLATES" | tr '\n' ' ')"
+            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          else
+            echo "✅ All services have corresponding templates"
+          fi
+
+          # Check for outdated templates (templates without corresponding services)
+          EXTRA_TEMPLATES=$(comm -13 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
+
+          if [ ! -z "$EXTRA_TEMPLATES" ]; then
+            echo "⚠️ Template directories without corresponding services:"
+            echo "$EXTRA_TEMPLATES" | while read -r extra; do
+              echo "  - $extra"
+            done
+          fi
+        fi
+
+        # Check 7: Script template synchronization
+        echo "📜 Checking script template synchronization..."
+
+        if [ -d "scripts/" ] && [ -d "templates/scripts/" ]; then
+          # Find all .sh files in scripts/ and corresponding .template files
+          SCRIPT_FILES=$(find scripts/ -name "*.sh" | sed 's|scripts/||; s|\.sh$||' | sort)
+          TEMPLATE_FILES=$(find templates/scripts/ -name "*.sh.template" | sed 's|templates/scripts/||; s|\.sh\.template$||' | sort)
+
+          MISSING_SCRIPT_TEMPLATES=$(comm -23 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
+
+          if [ ! -z "$MISSING_SCRIPT_TEMPLATES" ]; then
+            echo "❌ Scripts missing template versions:"
+            echo "$MISSING_SCRIPT_TEMPLATES" | while read -r missing; do
+              echo "  - $missing.sh"
+            done
+            VIOLATIONS="$VIOLATIONS\n- Missing script templates: $(echo "$MISSING_SCRIPT_TEMPLATES" | tr '\n' ' ')"
+            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+          else
+            echo "✅ All scripts have corresponding templates"
+          fi
+
+          # Check for outdated script templates
+          EXTRA_SCRIPT_TEMPLATES=$(comm -13 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
+
+          if [ ! -z "$EXTRA_SCRIPT_TEMPLATES" ]; then
+            echo "⚠️ Script templates without corresponding scripts:"
+            echo "$EXTRA_SCRIPT_TEMPLATES" | while read -r extra; do
+              echo "  - $extra.sh.template"
+            done
+          fi
+        fi
+
+        # Check 8: README.md domain compliance
+        echo "🎯 Checking README.md domain compliance..."
+
+        if [ -f "README.md" ]; then
+          if grep -q "yourdomain.com" README.md; then
+            echo "✅ README.md uses yourdomain.com placeholder"
+          else
+            if grep -qE "\.(com|net|org)" README.md; then
+              echo "⚠️ README.md may contain real domains (should use yourdomain.com)"
+            else
+              echo "✅ README.md contains no domain references"
+            fi
+          fi
+        else
+          echo "ℹ️ No README.md found"
+        fi
+
+        # Generate compliance report
+        echo ""
+        echo "📊 TEMPLATE COMPLIANCE REPORT"
+        echo "============================"
+        echo "Scan Date: $(date)"
+        echo "Total Violations: $VIOLATION_COUNT"
+
+        if [ $VIOLATION_COUNT -gt 0 ]; then
+          echo ""
+          echo "❌ COMPLIANCE VIOLATIONS:"
+          echo -e "$VIOLATIONS"
+          echo ""
+          echo "🔧 FIXES NEEDED:"
+          echo "1. Update .gitignore to exclude generated files"
+          echo "2. Ensure template files use yourdomain.com"
+          echo "3. Remove any tracked files from scripts/ and services/*/configs/"
+          echo "4. Verify container names use co- prefix"
+          echo "5. Create missing service templates in templates/services/"
+          echo "6. Create missing script templates in templates/scripts/"
+          echo "7. Remove outdated templates if services/scripts no longer exist"
+          echo ""
+          exit 1
+        else
+          echo "✅ All template compliance checks passed!"
+        fi

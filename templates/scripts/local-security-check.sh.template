@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+
+echo "🔒 Running Local Security Check for Carian Observatory"
+echo "=================================================="
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+ISSUES_FOUND=0
+
+# Check 1: Domain sanitization
+echo -e "\n🔍 Checking for production domains..."
+BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-yourdomain.com}"
+echo "🔧 Scanning for blocked domain: $BLOCKED_DOMAIN"
+
+if grep -r "${BLOCKED_DOMAIN//\./\\.}" . --exclude-dir=.git 2>/dev/null; then
+    echo -e "${RED}❌ Found production domain: $BLOCKED_DOMAIN!${NC}"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+else
+    echo -e "${GREEN}✅ No instances of $BLOCKED_DOMAIN found${NC}"
+fi
+
+# Check 2: Secret detection
+echo -e "\n🔐 Checking for secrets..."
+if command -v gitleaks &> /dev/null; then
+    gitleaks detect --source . --verbose --config .gitleaks.toml
+    if [ $? -ne 0 ]; then
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    fi
+else
+    echo -e "${YELLOW}⚠️ GitLeaks not installed, skipping secret detection${NC}"
+fi
+
+# Check 3: Template compliance
+echo -e "\n📋 Checking template compliance..."
+
+# Check if scripts/ is tracked
+if [ -d "scripts/" ] && [ "$(git ls-files scripts/ | wc -l)" -gt 0 ]; then
+    echo -e "${RED}❌ scripts/ directory should not be tracked${NC}"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+else
+    echo -e "${GREEN}✅ scripts/ properly gitignored${NC}"
+fi
+
+# Check if service configs are tracked
+if find services/ -path "*/configs/*" -type f | xargs git ls-files 2>/dev/null | grep -q .; then
+    echo -e "${RED}❌ Service config files should not be tracked${NC}"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+else
+    echo -e "${GREEN}✅ Service configs properly gitignored${NC}"
+fi
+
+# Check 4: Container naming
+echo -e "\n🐳 Checking container naming..."
+if find . -name "docker-compose*.yml" -exec grep -H "container_name:" {} \; | grep -v "co-"; then
+    echo -e "${RED}❌ Containers should use co- prefix${NC}"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+else
+    echo -e "${GREEN}✅ Container naming compliant${NC}"
+fi
+
+# Final result
+echo -e "\n📊 Security Check Summary"
+echo "========================"
+if [ $ISSUES_FOUND -eq 0 ]; then
+    echo -e "${GREEN}✅ All security checks passed!${NC}"
+    echo "Safe to commit and push."
+    exit 0
+else
+    echo -e "${RED}❌ Found $ISSUES_FOUND security issues${NC}"
+    echo "Please fix these issues before committing."
+    exit 1
+fi

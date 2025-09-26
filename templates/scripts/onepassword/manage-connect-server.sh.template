@@ -334,7 +334,7 @@ cleanup_connect_server() {
         docker compose -f "$CONNECT_COMPOSE_FILE" down -v
         
         # Remove any dangling images
-        docker image prune -f --filter label=com.carian-observatory.service
+        docker image prune -f --filter label=com.${COMPOSE_PROJECT_NAME}.service
         
         log_success "Connect Server cleanup completed"
     else

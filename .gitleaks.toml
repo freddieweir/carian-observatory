@@ -1,0 +1,53 @@
+title = "Carian Observatory GitLeaks Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+description = "OpenAI API Key"
+id = "openai-api-key"
+regex = '''sk-[a-zA-Z0-9]{48}'''
+
+[[rules]]
+description = "Anthropic Claude API Key"
+id = "claude-api-key"
+regex = '''sk-ant-api[0-9]{2}-[a-zA-Z0-9_-]{95}'''
+
+[[rules]]
+description = "ElevenLabs API Key"
+id = "elevenlabs-api-key"
+regex = '''[a-fA-F0-9]{32}'''
+
+[[rules]]
+description = "1Password Connect Token"
+id = "onepassword-connect"
+regex = '''eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*'''
+
+[[rules]]
+description = "Production Domain (CRITICAL)"
+id = "production-domain-critical"
+regex = '''corporateseas\.com'''
+# Note: This pattern will be updated dynamically in CI if PRODUCTION_DOMAIN is set
+
+[allowlist]
+description = "Allowlist for false positives"
+
+[[allowlist.regexes]]
+description = "1Password template references"
+regex = '''\{\{\s*op://[^}]+\}\}'''
+
+[[allowlist.regexes]]
+description = "Environment variable references"
+regex = '''\$\{[A-Z_]+\}'''
+
+[[allowlist.regexes]]
+description = "Template domain placeholder"
+regex = '''yourdomain\.com'''
+
+[[allowlist.paths]]
+description = "This config file"
+regex = '''\.gitleaks\.toml'''
+
+[[allowlist.paths]]
+description = "GitHub workflows"
+regex = '''\.github/workflows/.*'''

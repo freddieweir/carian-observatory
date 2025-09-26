@@ -1,0 +1,24 @@
+[general]
+port = 3001
+bind = "0.0.0.0"
+similarity_threshold = 0.5
+
+[openai]
+api_key = ""
+api_url = "http://host.docker.internal:11434"
+
+[ollama]
+api_url = "http://host.docker.internal:11434"
+embedding_model = "nomic-embed-text"
+
+[gemini]
+api_key = ""
+
+[groq]
+api_key = ""
+
+[anthropic]
+api_key = ""
+
+[searxng]
+api_url = "http://co-perplexica-searxng:4000"

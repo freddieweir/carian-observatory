@@ -40,7 +40,7 @@ log_error() {
 check_dependencies() {
     if ! command -v op &> /dev/null; then
         log_error "1Password CLI (op) is not installed or not in PATH"
-        log_info "Install: https://developer.1password.com/docs/cli/get-started/"
+        log_info "Install 1Password CLI from official documentation"
         exit 1
     fi
     
