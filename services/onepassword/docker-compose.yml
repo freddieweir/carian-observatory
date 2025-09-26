@@ -1,0 +1,97 @@
+# 1Password Connect Server Configuration
+# Self-hosted secrets management for Carian Observatory infrastructure
+#
+# This compose file deploys both Connect Server components:
+# - connect-sync: Keeps secrets in sync with 1Password.com
+# - connect-api: Provides REST API access to secrets
+#
+# Requirements:
+# - 1password-credentials.json file (generated via: op connect server create)
+# - Access tokens for API authentication (generated separately)
+
+services:
+  onepassword-connect-sync:
+    image: 1password/connect-sync:latest
+    container_name: ${USER_PREFIX:-co}-1p-connect-sync
+    restart: unless-stopped
+    volumes:
+      # Mount credentials file for Connect Server authentication
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+      # Shared volume for encrypted data cache between sync and API containers
+      - onepassword-data:/home/opuser/.op/data
+    environment:
+      # Optional: Configure logging level
+      OP_LOG_LEVEL: INFO
+      # Health check configuration
+      OP_HTTP_PORT: 8081
+    networks:
+      - onepassword-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.carian-observatory.service=onepassword-connect-sync"
+      - "com.carian-observatory.description=1Password Connect Server - Sync Component"
+
+  onepassword-connect-api:
+    image: 1password/connect-api:latest
+    container_name: ${USER_PREFIX:-co}-1p-connect-api
+    restart: unless-stopped
+    depends_on:
+      onepassword-connect-sync:
+        condition: service_healthy
+    volumes:
+      # Shared volume with sync container for accessing cached secrets
+      - onepassword-data:/home/opuser/.op/data:ro
+    environment:
+      # API server configuration
+      OP_HTTP_PORT: 8080
+      OP_LOG_LEVEL: INFO
+      # Security: Require token authentication for all requests
+      OP_API_HTTP_ENABLED: "true"
+    networks:
+      - onepassword-internal
+      - carian-observatory_app-network
+    ports:
+      # Internal API access for other services
+      - "127.0.0.1:8090:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    labels:
+      - "com.carian-observatory.service=onepassword-connect-api"
+      - "com.carian-observatory.description=1Password Connect Server - API Component"
+
+networks:
+  # Internal network for Connect Server components
+  onepassword-internal:
+    driver: bridge
+    internal: true
+    labels:
+      - "com.carian-observatory.network=onepassword-internal"
+      - "com.carian-observatory.description=Isolated network for 1Password Connect components"
+  
+  # Connect to main application network for service access
+  carian-observatory_app-network:
+    external: true
+
+volumes:
+  # Encrypted data cache shared between sync and API containers
+  onepassword-data:
+    driver: local
+    labels:
+      - "com.carian-observatory.volume=onepassword-data"
+      - "com.carian-observatory.description=1Password Connect Server encrypted data cache"
+
+# Security Notes:
+# 1. The credentials file is mounted read-only
+# 2. API container only has read access to cached data
+# 3. Internal network isolates sync operations
+# 4. Health checks ensure proper startup sequencing
+# 5. Bind to localhost only for API access (127.0.0.1:8090)
