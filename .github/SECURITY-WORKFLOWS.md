@@ -1,6 +1,6 @@
 # GitHub Actions Security Workflows
 
-This directory contains comprehensive security workflows for Carian Observatory that enforce domain sanitization, secret detection, and template compliance.
+This document describes the comprehensive security workflows for Carian Observatory that enforce domain sanitization, secret detection, and template compliance.
 
 ## 🔒 Workflow Overview
 
