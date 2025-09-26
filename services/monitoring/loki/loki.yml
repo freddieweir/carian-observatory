@@ -1,23 +1,33 @@
-# Ultra-minimal Loki Configuration
+# Enhanced Loki Configuration for Carian Observatory Docker Stack
 auth_enabled: false
 
 server:
   http_listen_port: 3100
+  grpc_listen_port: 9096
 
-ingester:
-  wal:
-    enabled: false
-  lifecycler:
-    address: 127.0.0.1
-    ring:
-      kvstore:
-        store: inmemory
-      replication_factor: 1
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
 
 schema_config:
   configs:
     - from: 2020-10-24
-      store: boltdb
+      store: boltdb-shipper
       object_store: filesystem
       schema: v11
       index:
@@ -25,12 +35,25 @@ schema_config:
         period: 24h
 
 storage_config:
-  boltdb:
-    directory: /loki/index
+  boltdb_shipper:
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
   filesystem:
     directory: /loki/chunks
+
+compactor:
+  working_directory: /loki/boltdb-shipper-compactor
 
 limits_config:
   reject_old_samples: true
   reject_old_samples_max_age: 168h
+  ingestion_rate_mb: 16
+  ingestion_burst_size_mb: 32
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
+  max_concurrent_tail_requests: 20
+  max_cache_freshness_per_query: 10m
   allow_structured_metadata: false
+
+ruler:
+  alertmanager_url: http://co-monitoring-alerts:9093

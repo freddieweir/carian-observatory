@@ -1,4 +1,4 @@
-# Simple Promtail Configuration for Carian Observatory
+# Comprehensive Promtail Configuration for Carian Observatory
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
@@ -8,10 +8,11 @@ positions:
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
+    tenant_id: carian-observatory
 
 scrape_configs:
-  # Docker container logs - Focus on Carian Observatory services
-  - job_name: carian-observatory-containers
+  # All Carian Observatory Docker containers
+  - job_name: carian-observatory-all
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
@@ -19,15 +20,15 @@ scrape_configs:
           - name: label
             values: ["com.docker.compose.project=carian-observatory"]
     relabel_configs:
-      # Extract container name
+      # Extract container name (remove leading slash)
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
 
-      # Extract service name from container name (co-service-component format)
+      # Extract service group from container name (co-service-component format)
       - source_labels: ['container']
         regex: 'co-([^-]+)-.*'
-        target_label: 'service'
+        target_label: 'service_group'
 
       # Extract component from container name
       - source_labels: ['container']
@@ -38,6 +39,130 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
         target_label: 'compose_project'
 
-      # Add compose service
+      # Add compose service name
       - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
         target_label: 'compose_service'
+
+      # Add image information
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_image']
+        target_label: 'image'
+
+      # Add Carian Observatory service labels if present
+      - source_labels: ['__meta_docker_container_label_com_carian_observatory_service']
+        target_label: 'co_service'
+      - source_labels: ['__meta_docker_container_label_com_carian_observatory_component']
+        target_label: 'co_component'
+
+      # Add watchtower scope labels if present
+      - source_labels: ['__meta_docker_container_label_com_carian_observatory_watchtower_scope']
+        target_label: 'watchtower_scope'
+      - source_labels: ['__meta_docker_container_label_com_carian_observatory_watchtower_schedule']
+        target_label: 'watchtower_schedule'
+
+      # Add environment label (production/canary)
+      - source_labels: ['container']
+        regex: '.*-canary.*'
+        target_label: 'environment'
+        replacement: 'canary'
+      - source_labels: ['container']
+        regex: '.*'
+        target_label: 'environment'
+        replacement: 'production'
+
+      # Categorize services by functional area
+      - source_labels: ['service_group']
+        regex: '(authelia|1p)'
+        target_label: 'functional_area'
+        replacement: 'authentication'
+      - source_labels: ['service_group']
+        regex: '(open-webui|ow)'
+        target_label: 'functional_area'
+        replacement: 'ai_interface'
+      - source_labels: ['service_group']
+        regex: '(perplexica)'
+        target_label: 'functional_area'
+        replacement: 'ai_search'
+      - source_labels: ['service_group']
+        regex: '(homepage|glance)'
+        target_label: 'functional_area'
+        replacement: 'dashboard'
+      - source_labels: ['service_group']
+        regex: '(monitoring)'
+        target_label: 'functional_area'
+        replacement: 'observability'
+      - source_labels: ['service_group']
+        regex: '(nginx)'
+        target_label: 'functional_area'
+        replacement: 'infrastructure'
+
+    pipeline_stages:
+      # Parse JSON logs if they're structured
+      - json:
+          expressions:
+            level: level
+            timestamp: timestamp
+            message: message
+            error: error
+
+      # Extract log level from common patterns
+      - regex:
+          expression: '(?P<extracted_level>(?:ERROR|WARN|WARNING|INFO|DEBUG|TRACE|FATAL|PANIC|error|warn|warning|info|debug|trace|fatal|panic))'
+          source: message
+
+      # Set log level label
+      - labels:
+          level:
+          extracted_level:
+
+      # Parse nginx access logs
+      - match:
+          selector: '{container="co-nginx-service"}'
+          stages:
+            - regex:
+                expression: '^(?P<remote_addr>\S+) - (?P<remote_user>\S+) \[(?P<time_local>[^\]]+)\] "(?P<method>\S+) (?P<request_uri>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"'
+            - labels:
+                method:
+                status:
+                remote_addr:
+
+      # Parse Authelia logs
+      - match:
+          selector: '{container="co-authelia-service"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  msg: msg
+                  method: method
+                  path: path
+                  remote_ip: remote_ip
+                  username: username
+            - labels:
+                method:
+                username:
+                remote_ip:
+
+  # System logs for monitoring containers
+  - job_name: monitoring-internal
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values:
+              - "co-monitoring-prometheus"
+              - "co-monitoring-grafana"
+              - "co-monitoring-loki"
+              - "co-monitoring-alerts"
+              - "co-monitoring-cadvisor"
+              - "co-monitoring-node"
+              - "co-monitoring-redis"
+              - "co-monitoring-promtail"
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - target_label: 'functional_area'
+        replacement: 'monitoring_internal'
+      - target_label: 'environment'
+        replacement: 'production'
