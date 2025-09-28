@@ -234,7 +234,8 @@ server {
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
         
         proxy_set_header Remote-User $user;
-        proxy_pass http://perplexica:3000;
+        set $upstream_perplexica co-perplexica-service:3000;
+        proxy_pass http://$upstream_perplexica;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -264,7 +265,8 @@ server {
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
         proxy_set_header Remote-User $user;
-        proxy_pass http://perplexica:3000;
+        set $upstream_perplexica co-perplexica-service:3000;
+        proxy_pass http://$upstream_perplexica;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -318,7 +320,8 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
         
-        proxy_pass http://homepage:3000;
+        set $upstream_homepage co-homepage-service:3000;
+        proxy_pass http://$upstream_homepage;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -349,7 +352,8 @@ server {
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
         proxy_set_header Remote-User $user;
-        proxy_pass http://homepage:3000/;
+        set $upstream_homepage co-homepage-service:3000;
+        proxy_pass http://$upstream_homepage/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -517,7 +521,8 @@ server {
     }
     
     location /perplexica/ {
-        proxy_pass http://perplexica:3000/;
+        set $upstream_perplexica co-perplexica-service:3000;
+        proxy_pass http://$upstream_perplexica/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
