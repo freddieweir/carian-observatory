@@ -80,7 +80,13 @@ token_cache*
 # =============================================================================
 # Ignore all scripts except templates
 scripts/**/*.sh
-!scripts/**/*.sh.template
+!scripts/**/*.template
+
+# Also ignore any non-template files in scripts/
+scripts/**/*
+!scripts/**/*.template
+!scripts/**/README.md
+!scripts/**/.gitkeep
 
 # =============================================================================
 # SERVICE CONFIGURATIONS - Generated configs ignored, templates allowed
@@ -93,9 +99,10 @@ services/*/configs/*
 !services/*/docker-compose.*.yml
 
 # Service scripts (generated from templates)
-services/*/scripts/*.sh
-!services/*/scripts/*.sh.template
+services/*/scripts/*
+!services/*/scripts/*.template
 !services/*/scripts/.gitkeep
+!services/*/scripts/README.md
 !services/monitoring/scripts/generate-config.sh
 !services/onepassword/scripts/*.sh
 !services/onepassword/scripts/README.md

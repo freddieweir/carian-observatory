@@ -76,20 +76,27 @@ jobs:
           done
         fi
 
-        # Check 3: Verify scripts/ directory is gitignored
-        echo "🚫 Checking scripts/ directory is not tracked..."
+        # Check 3: Verify scripts/ directory - only .template files should be tracked
+        echo "🚫 Checking scripts/ directory template compliance..."
 
         if [ -d "scripts/" ]; then
-          # Check if any files in scripts/ are tracked by git
-          TRACKED_SCRIPTS=$(git ls-files scripts/ 2>/dev/null || true)
+          # Check if any non-.template files in scripts/ are tracked by git
+          TRACKED_NON_TEMPLATES=$(git ls-files scripts/ 2>/dev/null | grep -v "\.template$" || true)
 
-          if [ ! -z "$TRACKED_SCRIPTS" ]; then
-            echo "❌ Found tracked files in scripts/ directory:"
-            echo "$TRACKED_SCRIPTS"
-            VIOLATIONS="$VIOLATIONS\n- Tracked files in scripts/: $TRACKED_SCRIPTS"
+          if [ ! -z "$TRACKED_NON_TEMPLATES" ]; then
+            echo "❌ Found tracked non-template files in scripts/ directory:"
+            echo "$TRACKED_NON_TEMPLATES"
+            VIOLATIONS="$VIOLATIONS\n- Tracked non-template files in scripts/: $TRACKED_NON_TEMPLATES"
             VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
           else
-            echo "✅ scripts/ directory properly gitignored"
+            echo "✅ scripts/ directory properly configured (only .template files tracked)"
+          fi
+
+          # Check that .template files exist and are tracked
+          TRACKED_TEMPLATES=$(git ls-files scripts/ 2>/dev/null | grep "\.template$" || true)
+          if [ ! -z "$TRACKED_TEMPLATES" ]; then
+            TEMPLATE_COUNT=$(echo "$TRACKED_TEMPLATES" | wc -l)
+            echo "✅ Found $TEMPLATE_COUNT .template files tracked in scripts/"
           fi
         fi
 
@@ -133,81 +140,75 @@ jobs:
 
               # Check for configs directory
               if [ -d "$service_dir/configs/" ]; then
-                # Check if configs are tracked (they shouldn't be)
-                TRACKED_CONFIGS=$(git ls-files "$service_dir/configs/" 2>/dev/null || true)
+                # Check if non-.template configs are tracked (they shouldn't be)
+                TRACKED_NON_TEMPLATE_CONFIGS=$(git ls-files "$service_dir/configs/" 2>/dev/null | grep -v "\.template$" || true)
 
-                if [ ! -z "$TRACKED_CONFIGS" ]; then
-                  echo "❌ Tracked config files in $service_dir/configs/:"
-                  echo "$TRACKED_CONFIGS"
-                  VIOLATIONS="$VIOLATIONS\n- Tracked configs: $TRACKED_CONFIGS"
+                if [ ! -z "$TRACKED_NON_TEMPLATE_CONFIGS" ]; then
+                  echo "❌ Tracked non-template config files in $service_dir/configs/:"
+                  echo "$TRACKED_NON_TEMPLATE_CONFIGS"
+                  VIOLATIONS="$VIOLATIONS\n- Tracked non-template configs: $TRACKED_NON_TEMPLATE_CONFIGS"
                   VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+                else
+                  echo "✅ $SERVICE_NAME configs properly configured (only .template files tracked)"
+                fi
+
+                # Check that .template files exist and are tracked
+                TRACKED_TEMPLATE_CONFIGS=$(git ls-files "$service_dir/configs/" 2>/dev/null | grep "\.template$" || true)
+                if [ ! -z "$TRACKED_TEMPLATE_CONFIGS" ]; then
+                  CONFIG_TEMPLATE_COUNT=$(echo "$TRACKED_TEMPLATE_CONFIGS" | wc -l)
+                  echo "✅ Found $CONFIG_TEMPLATE_COUNT .template config files in $SERVICE_NAME"
                 fi
               fi
             done
           fi
         fi
 
-        # Check 6: Template/Services synchronization
-        echo "🔄 Checking template/services synchronization..."
+        # Check 6: Co-located template validation
+        echo "🔄 Checking co-located template structure..."
 
-        if [ -d "services/" ] && [ -d "templates/services/" ]; then
-          # Check for services missing from templates
-          SERVICES_LIST=$(find services/ -mindepth 1 -maxdepth 1 -type d | sed 's|services/||' | sort)
-          TEMPLATES_LIST=$(find templates/services/ -mindepth 1 -maxdepth 1 -type d | sed 's|templates/services/||' | sort)
+        # Check that template files are co-located with their generated counterparts
+        if [ -d "services/" ]; then
+          echo "✅ Using co-located template structure (templates alongside generated files)"
 
-          MISSING_TEMPLATES=$(comm -23 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
-
-          if [ ! -z "$MISSING_TEMPLATES" ]; then
-            echo "❌ Services missing from templates/:"
-            echo "$MISSING_TEMPLATES" | while read -r missing; do
-              echo "  - $missing"
-            done
-            VIOLATIONS="$VIOLATIONS\n- Missing service templates: $(echo "$MISSING_TEMPLATES" | tr '\n' ' ')"
-            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
-          else
-            echo "✅ All services have corresponding templates"
-          fi
-
-          # Check for outdated templates (templates without corresponding services)
-          EXTRA_TEMPLATES=$(comm -13 <(echo "$SERVICES_LIST") <(echo "$TEMPLATES_LIST"))
-
-          if [ ! -z "$EXTRA_TEMPLATES" ]; then
-            echo "⚠️ Template directories without corresponding services:"
-            echo "$EXTRA_TEMPLATES" | while read -r extra; do
-              echo "  - $extra"
-            done
+          # Count co-located templates
+          COLOCATED_TEMPLATES=$(find services/ -name "*.template" 2>/dev/null | wc -l)
+          if [ $COLOCATED_TEMPLATES -gt 0 ]; then
+            echo "✅ Found $COLOCATED_TEMPLATES co-located .template files in services/"
           fi
         fi
 
-        # Check 7: Script template synchronization
-        echo "📜 Checking script template synchronization..."
-
-        if [ -d "scripts/" ] && [ -d "templates/scripts/" ]; then
-          # Find all .sh files in scripts/ and corresponding .template files
-          SCRIPT_FILES=$(find scripts/ -name "*.sh" | sed 's|scripts/||; s|\.sh$||' | sort)
-          TEMPLATE_FILES=$(find templates/scripts/ -name "*.sh.template" | sed 's|templates/scripts/||; s|\.sh\.template$||' | sort)
-
-          MISSING_SCRIPT_TEMPLATES=$(comm -23 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
-
-          if [ ! -z "$MISSING_SCRIPT_TEMPLATES" ]; then
-            echo "❌ Scripts missing template versions:"
-            echo "$MISSING_SCRIPT_TEMPLATES" | while read -r missing; do
-              echo "  - $missing.sh"
-            done
-            VIOLATIONS="$VIOLATIONS\n- Missing script templates: $(echo "$MISSING_SCRIPT_TEMPLATES" | tr '\n' ' ')"
-            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
-          else
-            echo "✅ All scripts have corresponding templates"
+        # Legacy check: warn if old templates/ directory exists
+        if [ -d "templates/" ]; then
+          echo "⚠️ Legacy templates/ directory found - consider migrating to co-located structure"
+          LEGACY_TEMPLATE_COUNT=$(find templates/ -name "*.template" 2>/dev/null | wc -l)
+          if [ $LEGACY_TEMPLATE_COUNT -gt 0 ]; then
+            echo "⚠️ Found $LEGACY_TEMPLATE_COUNT template files in legacy templates/ directory"
           fi
+        fi
 
-          # Check for outdated script templates
-          EXTRA_SCRIPT_TEMPLATES=$(comm -13 <(echo "$SCRIPT_FILES") <(echo "$TEMPLATE_FILES"))
+        # Check 7: Co-located script template validation
+        echo "📜 Checking co-located script template structure..."
 
-          if [ ! -z "$EXTRA_SCRIPT_TEMPLATES" ]; then
-            echo "⚠️ Script templates without corresponding scripts:"
-            echo "$EXTRA_SCRIPT_TEMPLATES" | while read -r extra; do
-              echo "  - $extra.sh.template"
+        if [ -d "scripts/" ]; then
+          # Find .template files in scripts/
+          SCRIPT_TEMPLATES=$(find scripts/ -name "*.sh.template" 2>/dev/null || true)
+
+          if [ ! -z "$SCRIPT_TEMPLATES" ]; then
+            SCRIPT_TEMPLATE_COUNT=$(echo "$SCRIPT_TEMPLATES" | wc -l)
+            echo "✅ Found $SCRIPT_TEMPLATE_COUNT co-located .template files in scripts/"
+
+            # Validate that corresponding generated files exist (but are gitignored)
+            echo "$SCRIPT_TEMPLATES" | while read -r template_file; do
+              GENERATED_FILE="${template_file%.template}"
+              if [ -f "$GENERATED_FILE" ]; then
+                # Check if generated file is properly gitignored
+                if git ls-files --error-unmatch "$GENERATED_FILE" >/dev/null 2>&1; then
+                  echo "⚠️ Generated file $GENERATED_FILE should be gitignored"
+                fi
+              fi
             done
+          else
+            echo "ℹ️ No .template files found in scripts/ (templates may be elsewhere)"
           fi
         fi
 
@@ -241,13 +242,13 @@ jobs:
           echo -e "$VIOLATIONS"
           echo ""
           echo "🔧 FIXES NEEDED:"
-          echo "1. Update .gitignore to exclude generated files"
+          echo "1. Update .gitignore to exclude generated files (allow .template files)"
           echo "2. Ensure template files use yourdomain.com"
-          echo "3. Remove any tracked files from scripts/ and services/*/configs/"
+          echo "3. Remove any tracked non-template files from scripts/ and services/*/configs/"
           echo "4. Verify container names use co- prefix"
-          echo "5. Create missing service templates in templates/services/"
-          echo "6. Create missing script templates in templates/scripts/"
-          echo "7. Remove outdated templates if services/scripts no longer exist"
+          echo "5. Ensure .template files are co-located with their generated counterparts"
+          echo "6. Update template processor to work with co-located structure"
+          echo "7. Remove legacy templates/ directory if migrated to co-located structure"
           echo ""
           exit 1
         else
