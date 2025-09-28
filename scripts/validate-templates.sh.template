@@ -1,0 +1,94 @@
+#!/bin/bash
+set -e
+
+echo "📋 Validating Carian Observatory Co-located Template System"
+echo "========================================================="
+
+ISSUES=0
+
+# Check for co-located .template files
+TEMPLATE_COUNT=$(find . -name "*.template" -not -path "./.git/*" 2>/dev/null | wc -l)
+echo "📁 Found $TEMPLATE_COUNT co-located template files"
+
+# Check for legacy templates/ directory
+if [ -d "templates/" ]; then
+    LEGACY_COUNT=$(find templates/ -name "*.template" 2>/dev/null | wc -l)
+    if [ $LEGACY_COUNT -gt 0 ]; then
+        echo "⚠️ Found $LEGACY_COUNT template files in legacy templates/ directory"
+        echo "💡 Consider migrating to co-located structure"
+    else
+        echo "ℹ️ Empty legacy templates/ directory can be removed"
+    fi
+else
+    echo "✅ Using modern co-located template structure"
+fi
+
+# Check master script
+if [ ! -f "create-all-from-templates.sh" ]; then
+    echo "❌ Master generation script missing"
+    ISSUES=$((ISSUES + 1))
+elif [ ! -x "create-all-from-templates.sh" ]; then
+    echo "⚠️ Master script not executable"
+    chmod +x create-all-from-templates.sh
+    echo "✅ Fixed permissions"
+else
+    echo "✅ Master script ready"
+fi
+
+# Validate template files use yourdomain.com
+echo "🔍 Validating template domains..."
+find . -name "*.template" -not -path "./.git/*" | while read -r file; do
+    if grep -q "\.com" "$file" && ! grep -q "yourdomain.com" "$file"; then
+        echo "⚠️ $file contains domains other than yourdomain.com"
+        ISSUES=$((ISSUES + 1))
+    fi
+done
+
+# Check gitignore compliance
+echo "🔍 Validating .gitignore compliance..."
+if [ -f ".gitignore" ]; then
+    if grep -q "scripts/" .gitignore && grep -q "services/\*/configs/" .gitignore; then
+        echo "✅ .gitignore properly excludes generated files"
+    else
+        echo "⚠️ .gitignore may not properly exclude generated files"
+        ISSUES=$((ISSUES + 1))
+    fi
+
+    if grep -q "!\*\*/\*.template" .gitignore; then
+        echo "✅ .gitignore allows .template files"
+    else
+        echo "⚠️ .gitignore may not allow .template files"
+        ISSUES=$((ISSUES + 1))
+    fi
+else
+    echo "❌ .gitignore file missing"
+    ISSUES=$((ISSUES + 1))
+fi
+
+# Check that template files are tracked
+echo "🔍 Checking template files are tracked by git..."
+TRACKED_TEMPLATES=$(git ls-files | grep "\.template$" | wc -l)
+echo "📂 Found $TRACKED_TEMPLATES tracked .template files"
+
+if [ $TRACKED_TEMPLATES -eq 0 ]; then
+    echo "⚠️ No .template files are tracked by git"
+    ISSUES=$((ISSUES + 1))
+fi
+
+# Check that generated files are not tracked
+echo "🔍 Checking generated files are not tracked..."
+TRACKED_SCRIPTS=$(git ls-files scripts/ | grep -v "\.template$" | grep -v "README.md" | wc -l)
+if [ $TRACKED_SCRIPTS -gt 0 ]; then
+    echo "⚠️ Found $TRACKED_SCRIPTS tracked non-template files in scripts/"
+    git ls-files scripts/ | grep -v "\.template$" | grep -v "README.md" | head -5
+    ISSUES=$((ISSUES + 1))
+else
+    echo "✅ Only .template files tracked in scripts/"
+fi
+
+if [ $ISSUES -eq 0 ]; then
+    echo "✅ Template system validation passed"
+else
+    echo "❌ Template system has $ISSUES issues"
+    exit 1
+fi

@@ -1,12 +1,12 @@
 #!/bin/bash
 # Master template processor for Carian Observatory
-# Generates all configuration files and scripts from templates directory
+# Generates all configuration files and scripts from co-located .template files
+# Templates are stored alongside their generated counterparts
 # This script should be run locally - generated files are gitignored for security
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATES_DIR="$SCRIPT_DIR/templates"
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,14 +16,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Carian Observatory Template Processor${NC}"
-echo "Generating all configuration files and scripts from templates..."
+echo "Generating all configuration files and scripts from co-located .template files..."
 echo
-
-# Check if templates directory exists
-if [[ ! -d "$TEMPLATES_DIR" ]]; then
-    echo -e "${RED}Error: Templates directory not found at $TEMPLATES_DIR${NC}"
-    exit 1
-fi
 
 # Source environment variables from .env file
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -59,11 +53,11 @@ if [[ -f "$ENV_FILE" ]]; then
         PRIMARY_DOMAIN=$(grep "^PRODUCTION_DOMAIN=" "$ENV_FILE" | cut -d'=' -f2 | sed 's/{{ op:\/\/[^}]*}}/corporateseas.com/g')
     fi
     if [[ -z "$PRIMARY_DOMAIN" ]] || [[ "$PRIMARY_DOMAIN" == "PLACEHOLDER_VALUE" ]]; then
-        # Try to extract domain from templates/.env.template
-        if [[ -f "$TEMPLATES_DIR/.env.template" ]]; then
-            PRIMARY_DOMAIN=$(grep "^PRODUCTION_DOMAIN=" "$TEMPLATES_DIR/.env.template" | cut -d'=' -f2)
+        # Try to extract domain from .env.template
+        if [[ -f "$SCRIPT_DIR/.env.template" ]]; then
+            PRIMARY_DOMAIN=$(grep "^PRODUCTION_DOMAIN=" "$SCRIPT_DIR/.env.template" | cut -d'=' -f2)
             if [[ -z "$PRIMARY_DOMAIN" ]]; then
-                PRIMARY_DOMAIN=$(grep "^PRIMARY_DOMAIN=" "$TEMPLATES_DIR/.env.template" | cut -d'=' -f2)
+                PRIMARY_DOMAIN=$(grep "^PRIMARY_DOMAIN=" "$SCRIPT_DIR/.env.template" | cut -d'=' -f2)
             fi
         fi
         if [[ -z "$PRIMARY_DOMAIN" ]]; then
@@ -74,7 +68,7 @@ if [[ -f "$ENV_FILE" ]]; then
     fi
 else
     echo -e "${RED}Error: .env file not found at $ENV_FILE${NC}"
-    echo "Please create .env file from templates/.env.template first"
+    echo "Please create .env file from .env.template first"
     exit 1
 fi
 
@@ -119,8 +113,8 @@ process_domain_template() {
 }
 
 echo -e "${BLUE}📁 Processing Root Templates${NC}"
-if [[ -f "$TEMPLATES_DIR/.env.template" ]]; then
-    process_envsubst_template "$TEMPLATES_DIR/.env.template" "$SCRIPT_DIR/.env" "Main environment configuration"
+if [[ -f "$SCRIPT_DIR/.env.template" ]]; then
+    process_envsubst_template "$SCRIPT_DIR/.env.template" "$SCRIPT_DIR/.env" "Main environment configuration"
 else
     echo -e "${YELLOW}  ⚠️  .env.template not found - skipping${NC}"
 fi
@@ -128,83 +122,47 @@ echo
 
 echo -e "${BLUE}📁 Processing Scripts${NC}"
 
-# Process infrastructure scripts
-echo -e "${GREEN}  🏗️ Infrastructure Scripts${NC}"
-if [[ -f "$TEMPLATES_DIR/scripts/infrastructure/add-hosts-entry.sh.template" ]]; then
-    process_domain_template \
-        "$TEMPLATES_DIR/scripts/infrastructure/add-hosts-entry.sh.template" \
-        "$SCRIPT_DIR/scripts/infrastructure/add-hosts-entry.sh" \
-        "Host entry management script"
-fi
+# Function to process all templates in a directory
+process_directory_templates() {
+    local dir="$1"
+    local description="$2"
 
-# Process authentication scripts
-echo -e "${GREEN}  🔐 Authentication Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts/authentication"/*.sh.template; do
-    if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
-        process_domain_template \
-            "$template" \
-            "$SCRIPT_DIR/scripts/authentication/$filename" \
-            "Authentication $filename script"
+    if [[ -d "$dir" ]]; then
+        local found_templates=false
+        for template in "$dir"/*.sh.template; do
+            if [[ -f "$template" ]]; then
+                if [[ "$found_templates" == false ]]; then
+                    echo -e "${GREEN}  $description${NC}"
+                    found_templates=true
+                fi
+                local output_file="${template%.template}"
+                local filename=$(basename "$template" .template)
+                process_domain_template \
+                    "$template" \
+                    "$output_file" \
+                    "$(basename "$dir") $filename"
+            fi
+        done
     fi
-done
+}
 
-# Process certificate scripts
-echo -e "${GREEN}  📜 Certificate Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts/certificates"/*.sh.template; do
-    if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
-        process_domain_template \
-            "$template" \
-            "$SCRIPT_DIR/scripts/certificates/$filename" \
-            "Certificate $filename script"
-    fi
-done
-
-# Process onepassword scripts
-echo -e "${GREEN}  🔑 1Password Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts/onepassword"/*.sh.template; do
-    if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
-        process_domain_template \
-            "$template" \
-            "$SCRIPT_DIR/scripts/onepassword/$filename" \
-            "1Password $filename script"
-    fi
-done
-
-# Process monitoring scripts
-echo -e "${GREEN}  📊 Monitoring Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts/monitoring"/*.sh.template; do
-    if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
-        process_domain_template \
-            "$template" \
-            "$SCRIPT_DIR/scripts/monitoring/$filename" \
-            "Monitoring $filename script"
-    fi
-done
-
-# Process migration scripts
-echo -e "${GREEN}  🚀 Migration Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts/migration"/*.sh.template; do
-    if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
-        process_domain_template \
-            "$template" \
-            "$SCRIPT_DIR/scripts/migration/$filename" \
-            "Migration $filename script"
-    fi
-done
+# Process script directories
+process_directory_templates "$SCRIPT_DIR/scripts/infrastructure" "🏗️ Infrastructure Scripts"
+process_directory_templates "$SCRIPT_DIR/scripts/authentication" "🔐 Authentication Scripts"
+process_directory_templates "$SCRIPT_DIR/scripts/certificates" "📜 Certificate Scripts"
+process_directory_templates "$SCRIPT_DIR/scripts/onepassword" "🔑 1Password Scripts"
+process_directory_templates "$SCRIPT_DIR/scripts/monitoring" "📊 Monitoring Scripts"
+process_directory_templates "$SCRIPT_DIR/scripts/migration" "🚀 Migration Scripts"
 
 # Process root-level scripts
 echo -e "${GREEN}  📝 Root-level Scripts${NC}"
-for template in "$TEMPLATES_DIR/scripts"/*.sh.template; do
+for template in "$SCRIPT_DIR/scripts"/*.sh.template; do
     if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
+        local output_file="${template%.template}"
+        local filename=$(basename "$template" .template)
         process_domain_template \
             "$template" \
-            "$SCRIPT_DIR/scripts/$filename" \
+            "$output_file" \
             "Root script $filename"
     fi
 done
@@ -213,45 +171,62 @@ echo
 
 echo -e "${BLUE}📁 Processing Service Templates${NC}"
 
-# Process Authelia templates
-echo -e "${GREEN}  🔐 Authelia Configuration${NC}"
-if [[ -f "$TEMPLATES_DIR/services/authelia/configs/configuration.yml.template" ]]; then
+# Process service configuration templates
+if [[ -f "$SCRIPT_DIR/services/authelia/configs/configuration.yml.template" ]]; then
+    echo -e "${GREEN}  🔐 Authelia Configuration${NC}"
     process_envsubst_template \
-        "$TEMPLATES_DIR/services/authelia/configs/configuration.yml.template" \
+        "$SCRIPT_DIR/services/authelia/configs/configuration.yml.template" \
         "$SCRIPT_DIR/services/authelia/configs/configuration.yml" \
         "Authelia main configuration"
 fi
 
-# Process nginx templates
-echo -e "${GREEN}  🌐 Nginx Configuration${NC}"
-if [[ -f "$TEMPLATES_DIR/services/nginx/configs/https.conf.template" ]]; then
+if [[ -f "$SCRIPT_DIR/services/nginx/configs/https.conf.template" ]]; then
+    echo -e "${GREEN}  🌐 Nginx Configuration${NC}"
     process_envsubst_template \
-        "$TEMPLATES_DIR/services/nginx/configs/https.conf.template" \
+        "$SCRIPT_DIR/services/nginx/configs/https.conf.template" \
         "$SCRIPT_DIR/services/nginx/configs/https.conf" \
         "Nginx HTTPS configuration"
+fi
+
+if [[ -f "$SCRIPT_DIR/services/glance/configs/glance.yml.template" ]]; then
+    echo -e "${GREEN}  👁️ Glance Configuration${NC}"
+    process_envsubst_template \
+        "$SCRIPT_DIR/services/glance/configs/glance.yml.template" \
+        "$SCRIPT_DIR/services/glance/configs/glance.yml" \
+        "Glance dashboard configuration"
+fi
+
+if [[ -f "$SCRIPT_DIR/services/monitoring/alertmanager/alertmanager.yml.template" ]]; then
+    echo -e "${GREEN}  🚨 Alertmanager Configuration${NC}"
+    process_envsubst_template \
+        "$SCRIPT_DIR/services/monitoring/alertmanager/alertmanager.yml.template" \
+        "$SCRIPT_DIR/services/monitoring/alertmanager/alertmanager.yml" \
+        "Alertmanager configuration"
 fi
 
 # Process Homepage templates
 echo -e "${GREEN}  🏠 Homepage Service${NC}"
 
 # Homepage configs (use envsubst for environment variables)
-for template in "$TEMPLATES_DIR/services/homepage/configs"/*.yaml.template; do
+for template in "$SCRIPT_DIR/services/homepage/configs"/*.yaml.template; do
     if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
+        local output_file="${template%.template}"
+        local filename=$(basename "$template" .template)
         process_envsubst_template \
             "$template" \
-            "$SCRIPT_DIR/services/homepage/configs/$filename" \
+            "$output_file" \
             "Homepage $filename config"
     fi
 done
 
 # Homepage scripts (use domain substitution)
-for template in "$TEMPLATES_DIR/services/homepage/scripts"/*.sh.template; do
+for template in "$SCRIPT_DIR/services/homepage/scripts"/*.sh.template; do
     if [[ -f "$template" ]]; then
-        filename=$(basename "$template" .template)
+        local output_file="${template%.template}"
+        local filename=$(basename "$template" .template)
         process_domain_template \
             "$template" \
-            "$SCRIPT_DIR/services/homepage/scripts/$filename" \
+            "$output_file" \
             "Homepage $filename script"
     fi
 done
@@ -269,8 +244,9 @@ echo "  📂 Homepage: services/homepage/configs/*.yaml, services/homepage/scrip
 echo
 echo -e "${YELLOW}📋 Important Notes:${NC}"
 echo "  • All generated files are gitignored for security"
-echo "  • Templates in templates/ directory are safe to commit"
-echo "  • Re-run this script after updating templates"
+echo "  • Template files (.template) are co-located with generated files"
+echo "  • Only .template files are safe to commit to git"
+echo "  • Re-run this script after updating any .template files"
 echo "  • Check .env file for required environment variables"
 echo
 echo -e "${BLUE}🔧 Next Steps:${NC}"
