@@ -64,39 +64,54 @@ token_cache*
 /tasks/
 
 # =============================================================================
-# NEW TEMPLATE SYSTEM - DIRECTORY-LEVEL EXCLUSIONS
+# IN-PLACE TEMPLATE SYSTEM - CO-LOCATED TEMPLATES AND GENERATED FILES
 # =============================================================================
-# Environment files (use templates/.env.template instead)
+# Templates (.template files) are stored alongside their generated counterparts
+# Only .template files are committed to git, generated files are ignored
+
+# Environment files
 .env
 .env.*
 !.env.template
 !.env.example
 
-# Generated service configurations (use templates/ instead)
-services/*/configs/
+# =============================================================================
+# SCRIPTS DIRECTORY - Generated scripts ignored, templates allowed
+# =============================================================================
+# Ignore all scripts except templates
+scripts/**/*.sh
+!scripts/**/*.sh.template
+
+# =============================================================================
+# SERVICE CONFIGURATIONS - Generated configs ignored, templates allowed
+# =============================================================================
+# Service configuration files (generated from templates)
 services/*/configs/*
 !services/*/configs/.gitkeep
 !services/*/configs/*.template
 !services/*/docker-compose.yml
+!services/*/docker-compose.*.yml
 
-# Generated monitoring configurations (use templates/ instead)
-services/monitoring/alertmanager/alertmanager.yml
-!services/monitoring/alertmanager/alertmanager.yml.template
-
-# Generated scripts (use templates/ instead)
-services/*/scripts/*
+# Service scripts (generated from templates)
+services/*/scripts/*.sh
+!services/*/scripts/*.sh.template
 !services/*/scripts/.gitkeep
 !services/monitoring/scripts/generate-config.sh
 !services/onepassword/scripts/*.sh
 !services/onepassword/scripts/README.md
 
-# Generated scripts directory (use templates/scripts/ instead)
-# ALL scripts are generated locally and should never be committed
-scripts/
+# Specific configuration files
+services/nginx/configs/https.conf
+services/glance/configs/glance.yml
+services/monitoring/alertmanager/alertmanager.yml
+services/authelia/configs/configuration.yml
+services/homepage/configs/services.yaml
 
-# Allow templates directory and all contents (SAFE TO COMMIT)
-!templates/
-!templates/**/*
+# =============================================================================
+# GLOBAL TEMPLATE ALLOWANCES
+# =============================================================================
+# Allow all .template files everywhere (these are safe to commit)
+!**/*.template
 
 # Allow master generation script
 !create-all-from-templates.sh

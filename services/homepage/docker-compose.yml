@@ -20,6 +20,11 @@ services:
       - CANARY_DOMAIN=${CANARY_DOMAIN}
       - PERPLEXICA_DOMAIN=${PERPLEXICA_DOMAIN}
       - AUTH_DOMAIN=${AUTH_DOMAIN}
+      # 1Password Connect integration
+      - OP_CONNECT_HOST=http://co-1p-connect-api:8080
+      - OP_CONNECT_TOKEN=${OP_CONNECT_TOKEN}
+      - HOMEPAGE_VAR_GRAFANA_USERNAME=${GRAFANA_USERNAME:-admin}
+      - HOMEPAGE_VAR_GRAFANA_PASSWORD=${GRAFANA_PASSWORD:-admin}
     networks:
       - app-network
     healthcheck:
