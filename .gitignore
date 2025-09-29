@@ -72,21 +72,25 @@ token_cache*
 # Environment files
 .env
 .env.*
-!.env.template
 !.env.example
+# NOTE: .env.resolved contains actual secrets and should never be committed
 
 # =============================================================================
-# SCRIPTS DIRECTORY - Generated scripts ignored, templates allowed
+# CONSOLIDATED SCRIPTS DIRECTORY - Generated scripts ignored, templates allowed
 # =============================================================================
-# Ignore all scripts except templates
+# Ignore all scripts except templates and specific allowed files
 scripts/**/*.sh
 !scripts/**/*.template
+!scripts/create-all-from-templates.sh
+!scripts/sync-templates.sh
 
 # Also ignore any non-template files in scripts/
 scripts/**/*
 !scripts/**/*.template
 !scripts/**/README.md
 !scripts/**/.gitkeep
+!scripts/create-all-from-templates.sh
+!scripts/sync-templates.sh
 
 # =============================================================================
 # SERVICE CONFIGURATIONS - Generated configs ignored, templates allowed
@@ -373,10 +377,14 @@ container-data/
 # =============================================================================
 # Temporary files from 1Password CLI operations
 .env.backup.*
+.env.resolved.*
 /tmp/.env.*
 **/op-session-*
 **/1password-temp-*
 1password_template.json
+
+# Environment backup directories
+backups/env/
 
 # 1Password Connect Server credentials
 1password-credentials.json
@@ -402,6 +410,10 @@ todos/
 # Development guidance files (internal only)
 CLAUDE.md
 /CLAUDE.md
+
+# Documentation moved to readmes directory (gitignored for security)
+readmes/
+/readmes/
 
 # GitHub workflow documentation (contains domain references)
 .github/README.md

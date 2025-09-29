@@ -25,10 +25,10 @@
     uptime: true
     label: "System Resources"
 
-# Search Widget - Kagi (Privacy-focused search)
+# Search Widget - Custom search provider (configure with your preferred search)
 - search:
     provider: custom
-    url: https://kagi.com/search?q=
+    url: ${SEARCH_PROVIDER_URL:-https://search.yourdomain.com/search?q=}
     target: _blank
     focus: true
     showSearchSuggestions: false

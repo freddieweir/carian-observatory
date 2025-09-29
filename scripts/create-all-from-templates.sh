@@ -7,6 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Colors for output
 RED='\033[0;31m'
@@ -20,7 +21,7 @@ echo "Generating all configuration files and scripts from co-located .template f
 echo
 
 # Source environment variables from .env file
-ENV_FILE="$SCRIPT_DIR/.env"
+ENV_FILE="$PROJECT_ROOT/.env"
 if [[ -f "$ENV_FILE" ]]; then
     echo -e "${GREEN}Loading environment variables from .env${NC}"
 
@@ -54,10 +55,10 @@ if [[ -f "$ENV_FILE" ]]; then
     fi
     if [[ -z "$PRIMARY_DOMAIN" ]] || [[ "$PRIMARY_DOMAIN" == "PLACEHOLDER_VALUE" ]]; then
         # Try to extract domain from .env.template
-        if [[ -f "$SCRIPT_DIR/.env.template" ]]; then
-            PRIMARY_DOMAIN=$(grep "^PRODUCTION_DOMAIN=" "$SCRIPT_DIR/.env.template" | cut -d'=' -f2)
+        if [[ -f "$PROJECT_ROOT/.env.template" ]]; then
+            PRIMARY_DOMAIN=$(grep "^PRODUCTION_DOMAIN=" "$PROJECT_ROOT/.env.template" | cut -d'=' -f2)
             if [[ -z "$PRIMARY_DOMAIN" ]]; then
-                PRIMARY_DOMAIN=$(grep "^PRIMARY_DOMAIN=" "$SCRIPT_DIR/.env.template" | cut -d'=' -f2)
+                PRIMARY_DOMAIN=$(grep "^PRIMARY_DOMAIN=" "$PROJECT_ROOT/.env.template" | cut -d'=' -f2)
             fi
         fi
         if [[ -z "$PRIMARY_DOMAIN" ]]; then
@@ -113,8 +114,8 @@ process_domain_template() {
 }
 
 echo -e "${BLUE}📁 Processing Root Templates${NC}"
-if [[ -f "$SCRIPT_DIR/.env.template" ]]; then
-    process_envsubst_template "$SCRIPT_DIR/.env.template" "$SCRIPT_DIR/.env" "Main environment configuration"
+if [[ -f "$PROJECT_ROOT/.env.template" ]]; then
+    process_envsubst_template "$PROJECT_ROOT/.env.template" "$PROJECT_ROOT/.env" "Main environment configuration"
 else
     echo -e "${YELLOW}  ⚠️  .env.template not found - skipping${NC}"
 fi

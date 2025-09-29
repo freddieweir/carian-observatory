@@ -60,6 +60,6 @@ pages:
       - size: full
         widgets:
           - type: iframe
-            source: ${HOMEPAGE_INTERNAL_URL:-http://co-homepage-service:3000}
+            source: ${HOMEPAGE_INTERNAL_URL:-https://homepage.yourdomain.com}
             height: 900
             title: "Internal Services Dashboard"

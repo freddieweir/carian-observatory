@@ -76,18 +76,44 @@ jobs:
           done
         fi
 
-        # Check 3: Verify scripts/ directory - only .template files should be tracked
+        # Check 3: Verify scripts/ directory - only .template files and allowed utility scripts should be tracked
         echo "🚫 Checking scripts/ directory template compliance..."
 
         if [ -d "scripts/" ]; then
+          # Define allowed utility scripts that should be tracked
+          ALLOWED_SCRIPTS=(
+            "scripts/create-all-from-templates.sh"
+            "scripts/sync-templates.sh"
+          )
+
           # Check if any non-.template files in scripts/ are tracked by git
           TRACKED_NON_TEMPLATES=$(git ls-files scripts/ 2>/dev/null | grep -v "\.template$" || true)
 
           if [ ! -z "$TRACKED_NON_TEMPLATES" ]; then
-            echo "❌ Found tracked non-template files in scripts/ directory:"
-            echo "$TRACKED_NON_TEMPLATES"
-            VIOLATIONS="$VIOLATIONS\n- Tracked non-template files in scripts/: $TRACKED_NON_TEMPLATES"
-            VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+            # Filter out allowed utility scripts
+            VIOLATIONS_FOUND=""
+            while IFS= read -r file; do
+              IS_ALLOWED=false
+              for allowed in "${ALLOWED_SCRIPTS[@]}"; do
+                if [ "$file" = "$allowed" ]; then
+                  IS_ALLOWED=true
+                  echo "✅ Allowed utility script: $file"
+                  break
+                fi
+              done
+              if [ "$IS_ALLOWED" = false ]; then
+                VIOLATIONS_FOUND="${VIOLATIONS_FOUND}${file}\n"
+              fi
+            done <<< "$TRACKED_NON_TEMPLATES"
+
+            if [ ! -z "$VIOLATIONS_FOUND" ]; then
+              echo "❌ Found tracked non-template files in scripts/ directory:"
+              echo -e "$VIOLATIONS_FOUND"
+              VIOLATIONS="$VIOLATIONS\n- Tracked non-template files in scripts/: $VIOLATIONS_FOUND"
+              VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+            else
+              echo "✅ scripts/ directory properly configured (only templates and allowed utilities)"
+            fi
           else
             echo "✅ scripts/ directory properly configured (only .template files tracked)"
           fi

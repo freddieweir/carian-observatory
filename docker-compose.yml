@@ -12,8 +12,8 @@ name: carian-observatory
 
 # Include modular service definitions
 include:
-  # Infrastructure services
-  - path: services/onepassword/docker-compose.yml
+  # Infrastructure services (1Password Connect disabled - using CLI injection)
+  # - path: services/onepassword/docker-compose.yml
   
   # Core services
   - path: services/open-webui/docker-compose.yml
