@@ -4,7 +4,7 @@
 services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:latest
-    container_name: ${USER_PREFIX}-open-webui-service
+    container_name: co-open-webui-service
     restart: unless-stopped
     volumes:
       # PRODUCTION VOLUME - DO NOT CHANGE

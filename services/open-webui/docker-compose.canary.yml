@@ -4,7 +4,7 @@
 services:
   open-webui-canary:
     image: ghcr.io/open-webui/open-webui:latest
-    container_name: ${USER_PREFIX}-open-webui-canary
+    container_name: co-open-webui-canary
     restart: unless-stopped
     volumes:
       # Separate canary data volume

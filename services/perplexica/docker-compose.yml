@@ -3,7 +3,7 @@
 services:
   perplexica:
     image: itzcrazykns1337/perplexica:main
-    container_name: ${USER_PREFIX}-perplexica-service
+    container_name: co-perplexica-service
     restart: unless-stopped
     environment:
       - SEARXNG_API_URL=http://searxng:8080
@@ -25,7 +25,7 @@ services:
 
   searxng:
     image: docker.io/searxng/searxng:latest
-    container_name: ${USER_PREFIX}-perplexica-searxng
+    container_name: co-perplexica-searxng
     restart: unless-stopped
     volumes:
       - ./configs/searxng:/etc/searxng:rw

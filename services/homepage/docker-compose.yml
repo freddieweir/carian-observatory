@@ -4,7 +4,7 @@
 services:
   homepage:
     image: ghcr.io/gethomepage/homepage:v0.9.10
-    container_name: ${USER_PREFIX}-homepage-service
+    container_name: co-homepage-service
     restart: unless-stopped
     expose:
       - "3000"
@@ -36,7 +36,7 @@ services:
 
   homepage-iframe-proxy:
     image: nginx:alpine
-    container_name: ${USER_PREFIX}-homepage-iframe-proxy
+    container_name: co-homepage-iframe-proxy
     restart: unless-stopped
     ports:
       - "3001:3001"
