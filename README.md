@@ -555,6 +555,52 @@ carian-observatory/
     └── onepassword/                # Secret deployment scripts
 ```
 
+## Design Principles
+
+### What This Project Prioritizes
+
+**Security by Default:**
+- Multi-factor authentication required for all services
+- Template-based configuration preventing secret exposure
+- 1Password integration for centralized secret management
+- SSL/TLS encryption for all external traffic
+- Default-deny access control policies
+
+**Operational Excellence:**
+- Modular architecture for independent service management
+- Comprehensive observability (metrics, logs, alerts)
+- Automated updates with canary testing
+- Clear separation between production and testing environments
+
+**Maintainability:**
+- Infrastructure as code with version control
+- Self-documenting configuration templates
+- Standardized container naming conventions
+- Detailed operational documentation
+
+### What This Project Avoids
+
+**Anti-Patterns Explicitly Rejected:**
+- ❌ Hardcoded secrets in configuration files or code
+- ❌ Services without authentication requirements
+- ❌ Single-factor authentication
+- ❌ Secrets committed to version control
+- ❌ Unencrypted service communication
+- ❌ Missing observability and monitoring
+- ❌ Manual update processes without testing
+- ❌ Monolithic architectures preventing independent scaling
+
+**Security Standards:**
+- No API keys in environment files committed to git
+- No default passwords or weak authentication
+- No unauthenticated service endpoints
+- No plain HTTP for external traffic
+- No shared credentials across services
+
+This platform demonstrates security-conscious infrastructure design with practical implementations of modern DevOps practices.
+
+---
+
 ## License
 
 This project is for portfolio demonstration purposes.
