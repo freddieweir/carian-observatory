@@ -598,9 +598,3 @@ carian-observatory/
 - No shared credentials across services
 
 This platform demonstrates security-conscious infrastructure design with practical implementations of modern DevOps practices.
-
----
-
-## License
-
-This project is for portfolio demonstration purposes.
