@@ -76,6 +76,7 @@ class MemoryImporter:
             """
 
             cursor.executemany(insert_query, memories)
+            # Commit database transaction
             self.conn.commit()
 
             inserted_count = cursor.rowcount
