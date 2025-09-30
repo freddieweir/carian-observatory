@@ -53,12 +53,10 @@ services:
       POSTGRES_DB: ${POSTGRESQL_DB}
       POSTGRES_USER: ${POSTGRESQL_USER}
       POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
       TZ: UTC
     volumes:
       - postgresql-data:/var/lib/postgresql/data
       - ../postgresql/init:/docker-entrypoint-initdb.d:ro
-      - ../postgresql/configs/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     ports:
       - "5432:5432"
     networks:
