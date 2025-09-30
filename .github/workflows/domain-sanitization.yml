@@ -87,7 +87,8 @@ jobs:
           if [ ! -z "$TEMPLATE_FILES" ]; then
             for file in $TEMPLATE_FILES; do
               # Check for any .com domain that isn't yourdomain.com variants or known API endpoints
-              DOMAIN_MATCHES=$(grep -n "\.[a-zA-Z0-9-]\+\.com" "$file" 2>/dev/null | grep -v "yourdomain\.com" | grep -v "yourdomain\.1password\.com" | grep -v "api\.openai\.com" | grep -v "openrouter\.ai" | grep -v "www\.apple\.com" || true)
+              # Exclude code patterns like .conn.commit() by requiring word boundaries
+              DOMAIN_MATCHES=$(grep -nE "\b[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9-]+\.(com|net|org|io)\b" "$file" 2>/dev/null | grep -v "yourdomain\.com" | grep -v "yourdomain\.1password\.com" | grep -v "api\.openai\.com" | grep -v "openrouter\.ai" | grep -v "www\.apple\.com" || true)
 
               if [ ! -z "$DOMAIN_MATCHES" ]; then
                 echo "❌ Template violation in $file:"

@@ -1,0 +1,126 @@
+-- PostgreSQL 18 + pgvector initialization for Carian Observatory Memory Storage
+-- This script initializes the memories database with full-text search and vector embeddings support
+
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Create memories table with full-text search and vector support
+CREATE TABLE IF NOT EXISTS memories (
+    id SERIAL PRIMARY KEY,
+    chat_id TEXT NOT NULL,
+    user_id TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    participants TEXT[],
+    content TEXT NOT NULL,
+    content_vector vector(1536), -- OpenAI embedding dimension
+    metadata JSONB DEFAULT '{}',
+    search_vector tsvector,
+    tags TEXT[] DEFAULT '{}',
+    importance_score REAL DEFAULT 0.5,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for optimal performance
+CREATE INDEX IF NOT EXISTS idx_memories_chat_id ON memories(chat_id);
+CREATE INDEX IF NOT EXISTS idx_memories_user_id ON memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_memories_timestamp ON memories(timestamp);
+CREATE INDEX IF NOT EXISTS idx_memories_fts ON memories USING GIN(search_vector);
+CREATE INDEX IF NOT EXISTS idx_memories_vector ON memories USING ivfflat(content_vector vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_memories_metadata ON memories USING GIN(metadata);
+CREATE INDEX IF NOT EXISTS idx_memories_tags ON memories USING GIN(tags);
+
+-- Function to automatically update search_vector
+CREATE OR REPLACE FUNCTION update_search_vector() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector := to_tsvector('english',
+        COALESCE(NEW.content, '') || ' ' ||
+        COALESCE(array_to_string(NEW.participants, ' '), '') || ' ' ||
+        COALESCE(array_to_string(NEW.tags, ' '), '')
+    );
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to update search_vector on insert/update
+DROP TRIGGER IF EXISTS memories_search_vector_update ON memories;
+CREATE TRIGGER memories_search_vector_update
+    BEFORE INSERT OR UPDATE ON memories
+    FOR EACH ROW EXECUTE FUNCTION update_search_vector();
+
+-- Function for semantic search
+CREATE OR REPLACE FUNCTION search_memories(
+    query_text TEXT DEFAULT '',
+    query_vector vector(1536) DEFAULT NULL,
+    user_filter TEXT DEFAULT NULL,
+    limit_count INT DEFAULT 10,
+    similarity_threshold REAL DEFAULT 0.7
+)
+RETURNS TABLE(
+    id INT,
+    content TEXT,
+    chat_id TEXT,
+    timestamp TIMESTAMPTZ,
+    participants TEXT[],
+    metadata JSONB,
+    text_rank REAL,
+    vector_similarity REAL,
+    combined_score REAL
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        m.id,
+        m.content,
+        m.chat_id,
+        m.timestamp,
+        m.participants,
+        m.metadata,
+        CASE
+            WHEN query_text != '' THEN ts_rank(m.search_vector, plainto_tsquery('english', query_text))
+            ELSE 0.0
+        END as text_rank,
+        CASE
+            WHEN query_vector IS NOT NULL THEN 1 - (m.content_vector <=> query_vector)
+            ELSE 0.0
+        END as vector_similarity,
+        CASE
+            WHEN query_text != '' AND query_vector IS NOT NULL THEN
+                (ts_rank(m.search_vector, plainto_tsquery('english', query_text)) * 0.3) +
+                ((1 - (m.content_vector <=> query_vector)) * 0.7)
+            WHEN query_text != '' THEN ts_rank(m.search_vector, plainto_tsquery('english', query_text))
+            WHEN query_vector IS NOT NULL THEN 1 - (m.content_vector <=> query_vector)
+            ELSE 0.0
+        END as combined_score
+    FROM memories m
+    WHERE
+        (user_filter IS NULL OR m.user_id = user_filter)
+        AND (
+            (query_text = '' OR m.search_vector @@ plainto_tsquery('english', query_text))
+            OR (query_vector IS NULL OR (1 - (m.content_vector <=> query_vector)) >= similarity_threshold)
+        )
+    ORDER BY combined_score DESC
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Performance monitoring view
+CREATE OR REPLACE VIEW memory_stats AS
+SELECT
+    COUNT(*) as total_memories,
+    COUNT(DISTINCT user_id) as unique_users,
+    COUNT(DISTINCT chat_id) as unique_chats,
+    AVG(LENGTH(content)) as avg_content_length,
+    MIN(timestamp) as earliest_memory,
+    MAX(timestamp) as latest_memory
+FROM memories;
+
+-- Grant permissions (uses environment variable substitution)
+-- Note: Actual username will be substituted when running the script
+DO $$
+BEGIN
+    EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO %I', current_user);
+    EXECUTE format('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO %I', current_user);
+END
+$$;

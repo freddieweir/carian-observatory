@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""
+Import Open-WebUI chat JSONs as memories into PostgreSQL
+Carian Observatory Memory Storage System
+"""
+
+import json
+import os
+import sys
+import argparse
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from datetime import datetime
+from typing import List, Dict, Any
+
+
+class MemoryImporter:
+    def __init__(self, db_url: str):
+        self.db_url = db_url
+        self.conn = None
+
+    def connect(self):
+        """Connect to PostgreSQL database"""
+        try:
+            self.conn = psycopg2.connect(self.db_url)
+            print("✅ Connected to PostgreSQL")
+        except Exception as e:
+            print(f"❌ Database connection failed: {e}")
+            sys.exit(1)
+
+    def parse_chat_json(self, json_file: str) -> List[Dict[str, Any]]:
+        """Parse Open-WebUI chat JSON and extract memories"""
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                chat_data = json.load(f)
+
+            memories = []
+            chat_id = chat_data.get('id', os.path.basename(json_file))
+
+            for message in chat_data.get('messages', []):
+                if message.get('role') == 'user':
+                    content = message.get('content', '')
+                    if len(content.strip()) > 10:  # Only meaningful content
+                        memory = {
+                            'chat_id': chat_id,
+                            'user_id': chat_data.get('user_id', 'unknown'),
+                            'timestamp': datetime.fromtimestamp(message.get('timestamp', 0)),
+                            'content': content,
+                            'participants': [message.get('role', 'user')],
+                            'metadata': json.dumps({
+                                'model': chat_data.get('model', ''),
+                                'title': chat_data.get('title', ''),
+                                'original_file': os.path.basename(json_file)
+                            })
+                        }
+                        memories.append(memory)
+
+            return memories
+
+        except Exception as e:
+            print(f"❌ Error parsing {json_file}: {e}")
+            return []
+
+    def insert_memories(self, memories: List[Dict[str, Any]]) -> int:
+        """Insert memories into PostgreSQL"""
+        if not memories:
+            return 0
+
+        try:
+            cursor = self.conn.cursor()
+
+            insert_query = """
+                INSERT INTO memories (chat_id, user_id, timestamp, content, participants, metadata)
+                VALUES (%(chat_id)s, %(user_id)s, %(timestamp)s, %(content)s, %(participants)s, %(metadata)s::jsonb)
+                ON CONFLICT DO NOTHING
+            """
+
+            cursor.executemany(insert_query, memories)
+            # Commit database transaction
+            self.conn.commit()
+
+            inserted_count = cursor.rowcount
+            cursor.close()
+
+            return inserted_count
+
+        except Exception as e:
+            print(f"❌ Error inserting memories: {e}")
+            self.conn.rollback()
+            return 0
+
+    def import_from_directory(self, directory: str) -> Dict[str, int]:
+        """Import all JSON files from a directory"""
+        results = {'files_processed': 0, 'memories_imported': 0, 'errors': 0}
+
+        for filename in os.listdir(directory):
+            if filename.endswith('.json'):
+                filepath = os.path.join(directory, filename)
+                print(f"🔄 Processing {filename}...")
+
+                memories = self.parse_chat_json(filepath)
+                if memories:
+                    imported = self.insert_memories(memories)
+                    results['memories_imported'] += imported
+                    print(f"✅ Imported {imported} memories from {filename}")
+                else:
+                    results['errors'] += 1
+                    print(f"⚠️  No memories extracted from {filename}")
+
+                results['files_processed'] += 1
+
+        return results
+
+    def close(self):
+        """Close database connection"""
+        if self.conn:
+            self.conn.close()
+            print("🔒 Database connection closed")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Import Open-WebUI chat JSONs as memories')
+    parser.add_argument('--input-dir', required=True, help='Directory containing JSON files')
+    parser.add_argument('--db-url', default=os.getenv('DATABASE_URL'), help='PostgreSQL connection URL')
+
+    args = parser.parse_args()
+
+    if not args.db_url:
+        print("❌ DATABASE_URL environment variable or --db-url argument required")
+        sys.exit(1)
+
+    if not os.path.isdir(args.input_dir):
+        print(f"❌ Input directory not found: {args.input_dir}")
+        sys.exit(1)
+
+    # Import memories
+    importer = MemoryImporter(args.db_url)
+    importer.connect()
+
+    print(f"🚀 Starting import from {args.input_dir}")
+    results = importer.import_from_directory(args.input_dir)
+
+    importer.close()
+
+    # Summary
+    print("\n📊 Import Summary:")
+    print(f"   Files processed: {results['files_processed']}")
+    print(f"   Memories imported: {results['memories_imported']}")
+    print(f"   Errors: {results['errors']}")
+
+    if results['memories_imported'] > 0:
+        print("✅ Import completed successfully!")
+    else:
+        print("⚠️  No memories were imported")
+
+
+if __name__ == "__main__":
+    main()
