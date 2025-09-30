@@ -1,0 +1,41 @@
+# PostgreSQL 18 configuration optimized for Open-WebUI memory storage
+# Carian Observatory - Memory Storage Service
+
+# Connection settings
+max_connections = 100
+shared_buffers = 256MB
+effective_cache_size = 1GB
+
+# Memory settings for vector operations
+work_mem = 64MB
+maintenance_work_mem = 256MB
+
+# Logging
+log_min_duration_statement = 1000
+log_statement = 'all'
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
+
+# pgvector specific settings
+shared_preload_libraries = 'vector'
+
+# Text search configuration
+default_text_search_config = 'pg_catalog.english'
+
+# Performance tuning
+random_page_cost = 1.1
+seq_page_cost = 1.0
+
+# PostgreSQL 18 specific optimizations
+# JIT is now optional in PostgreSQL 18 - enable if needed
+# jit = on
+# jit_above_cost = 100000
+
+# Autovacuum settings for memory table maintenance
+autovacuum = on
+autovacuum_max_workers = 3
+autovacuum_naptime = 1min

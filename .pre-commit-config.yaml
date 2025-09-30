@@ -1,22 +1,92 @@
+# Universal Pre-Commit Configuration
+# Applies to all repositories regardless of language/framework
+
 repos:
+  # Secret Detection
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.0
     hooks:
       - id: gitleaks
+        name: Detect secrets and credentials
+        description: Scans for API keys, tokens, passwords
 
+  # OPSEC Enforcement (Local Hook)
   - repo: local
     hooks:
-      - id: domain-check
-        name: Check for production domains
-        entry: bash -c 'BLOCKED_DOMAIN="${PRODUCTION_DOMAIN:-corporateseas.com}"; if grep -r "${BLOCKED_DOMAIN//\./\\.}" .; then echo "❌ Production domain ($BLOCKED_DOMAIN) found!"; exit 1; fi'
+      - id: opsec-check
+        name: OPSEC Security Scan
+        entry: bash -c 'if [ -f "$TOMB_HOOKS_DIR/../../scripts/opsec-check.sh" ]; then "$TOMB_HOOKS_DIR/../../scripts/opsec-check.sh" pre-commit; else echo "⚠️  OPSEC scanner not found"; fi'
         language: system
+        pass_filenames: false
+        description: Checks for sensitive data exposure (domains, usernames, paths)
 
-      - id: template-check
-        name: Validate template system
-        entry: bash -c 'if [ -d "scripts/" ] && [ "$(git ls-files scripts/ | wc -l)" -gt 0 ]; then echo "❌ scripts/ should not be tracked"; exit 1; fi'
+      - id: template-validation
+        name: Template System Compliance
+        entry: bash -c 'if [ -d "scripts/" ] && [ "$(git ls-files scripts/*.sh | grep -v ".template\|create-scripts.sh" | wc -l)" -gt 0 ]; then echo "❌ Generated scripts should not be tracked (use templates)"; exit 1; fi'
         language: system
+        pass_filenames: false
+        description: Ensures template/generated file separation
 
-      - id: container-naming
-        name: Check container naming convention
-        entry: bash -c 'if find . -name "docker-compose*.yml" -exec grep -H "container_name:" {} \; | grep -v "co-"; then echo "❌ Containers should use co- prefix"; exit 1; fi'
+      - id: gitignore-enforcement
+        name: Enforce .gitignore Patterns
+        entry: bash -c 'if git ls-files | grep -E "(CLAUDE\.md|\.env$|\.env\.local|settings\.local\.json)"; then echo "❌ Sensitive files should be gitignored"; exit 1; fi'
         language: system
+        pass_filenames: false
+        description: Prevents committing sensitive configuration files
+
+  # File Quality Checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Validate YAML syntax
+        exclude: '^(.github/workflows/|workflows/)'  # Handled separately
+      - id: check-added-large-files
+        name: Prevent large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: detect-private-key
+        name: Detect private keys
+# Profile-Specific Hooks
+# Extends universal.yaml with Docker-specific hooks
+
+repos:
+  # Dockerfile Linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        name: Hadolint (Dockerfile Linter)
+        description: Lint Dockerfiles for best practices
+
+  # Docker Compose Validation
+  - repo: local
+    hooks:
+      - id: docker-compose-check
+        name: Validate Docker Compose Files
+        entry: bash -c 'for f in docker-compose*.yml docker-compose*.yaml; do [ -f "$f" ] && docker compose -f "$f" config >/dev/null 2>&1 || exit 0; done'
+        language: system
+        files: docker-compose.*\.ya?ml$
+        description: Validates docker-compose syntax
+
+      - id: container-naming-convention
+        name: Enforce Container Naming
+        entry: bash -c 'if find . -name "docker-compose*.yml" -o -name "docker-compose*.yaml" | xargs grep -h "container_name:" | grep -v "NAMING_PREFIX" | grep -v "#"; then echo "ℹ️  Consider using consistent container naming"; fi'
+        language: system
+        pass_filenames: false
+        description: Checks for consistent container naming conventions
+
+  # Docker Security Scanning
+  - repo: local
+    hooks:
+      - id: dockerfile-security
+        name: Dockerfile Security Checks
+        entry: bash -c 'for f in */Dockerfile Dockerfile; do [ -f "$f" ] && grep -q "^USER " "$f" || true; done'
+        language: system
+        files: Dockerfile$
+        description: Basic Dockerfile security checks

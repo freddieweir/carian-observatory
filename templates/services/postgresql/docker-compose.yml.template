@@ -1,0 +1,36 @@
+# PostgreSQL Memory Storage Service (PostgreSQL 18 + pgvector)
+
+services:
+  postgresql:
+    image: pgvector/pgvector:pg18
+    container_name: co-postgresql-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRESQL_DB}
+      POSTGRES_USER: ${POSTGRESQL_USER}
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: UTC
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - ./configs/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER} -d ${POSTGRESQL_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgresql-data:
+    name: ${COMPOSE_PROJECT_NAME}_postgresql-data
+
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}_app-network
+    external: true
