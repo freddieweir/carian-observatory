@@ -1,422 +1,600 @@
 # Carian Observatory
 
-A comprehensive AI infrastructure platform featuring enterprise security, modern authentication, and scalable microservices architecture.
+A self-hosted AI infrastructure platform with modular architecture, authenticated access control, and comprehensive observability.
 
 <img width="1000" height="563" alt="The_Three_sister" src="https://github.com/user-attachments/assets/5debed05-156c-4b42-a5e8-eade5546f593" />
 
 <img width="1440" height="939" alt="CleanShot 2025-09-21 at 17 50 23" src="https://github.com/user-attachments/assets/09962829-d1ad-4e53-aa35-3aa2fa9eca6d" />
 
+## Overview
+
+Carian Observatory is a Docker-based platform that integrates multiple AI services behind a unified authentication layer. It provides:
+
+- **AI Chat Interface** via Open-WebUI with support for multiple LLM providers
+- **AI-Powered Search** through Perplexica with SearXNG integration
+- **Centralized Authentication** using Authelia with WebAuthn/FIDO2 support
+- **Platform Monitoring** with Homepage dashboard and Glance feeds
+- **Full Observability** via PGLA stack (Prometheus, Grafana, Loki, Alertmanager)
+- **Secure Secret Management** through 1Password Connect API
+- **Smart Update Strategy** using dual watchtower configuration (production + canary)
+
+All services communicate over private Docker networks with SSL/TLS termination at the nginx reverse proxy layer. Configuration templates ensure no secrets are committed to version control.
+
+<details>
+<summary><strong>🏗️ Architecture</strong></summary>
+
+## System Architecture
+
+Carian Observatory uses a modular service architecture with Docker Compose's `include` feature, allowing independent service management while maintaining integration.
+
+### Service Groups
+
+```
+📡 Carian Observatory Platform
+│
+├── 🔐 Authentication Layer
+│   ├── co-authelia-service     (WebAuthn/FIDO2, TOTP)
+│   └── co-authelia-redis       (Session storage)
+│
+├── 🌐 AI Services
+│   ├── co-open-webui-service   (Production AI chat)
+│   ├── co-open-webui-canary    (Canary testing)
+│   ├── co-perplexica-service   (AI search)
+│   └── co-perplexica-searxng   (Meta-search engine)
+│
+├── 📊 Platform Services
+│   ├── co-homepage-service     (Unified dashboard)
+│   ├── co-homepage-iframe-proxy (Secure iframe integration)
+│   └── co-glance-service       (RSS monitoring dashboard)
+│
+├── 📈 Observability Stack (PGLA)
+│   ├── co-monitoring-prometheus    (Metrics collection)
+│   ├── co-monitoring-grafana       (Visualization)
+│   ├── co-monitoring-loki          (Log aggregation)
+│   ├── co-monitoring-alertmanager  (Alert routing)
+│   ├── co-monitoring-promtail      (Log shipping)
+│   ├── co-monitoring-cadvisor      (Container metrics)
+│   ├── co-monitoring-node          (System metrics)
+│   └── co-monitoring-redis         (Redis metrics)
+│
+├── 🔒 Infrastructure
+│   ├── co-nginx-service        (Reverse proxy + SSL/TLS)
+│   ├── co-1p-connect-sync      (1Password vault sync)
+│   └── co-1p-connect-api       (Secret retrieval API)
+│
+└── 🔄 Update Management
+    ├── co-ow-watchtower-service (Weekly production updates)
+    └── co-ow-watchtower-canary  (Daily canary updates)
+```
+
+### Security Model
+
+**Authentication Flow:**
+1. User requests service (e.g., `https://webui.yourdomain.com`)
+2. Nginx forwards auth check to Authelia
+3. If unauthenticated, redirect to `https://auth.yourdomain.com`
+4. User authenticates with WebAuthn/FIDO2 or TOTP
+5. Session stored in Redis, forwarded to requested service
+
+**Secret Management:**
+- Configuration templates use `yourdomain.com` placeholders (safe for git)
+- Real domains configured in `.env` (gitignored)
+- API keys retrieved from 1Password Connect API
+- No secrets in version control or container definitions
+
+### Network Topology
+
+- `carian-observatory_app-network` - Main service communication
+- `carian-observatory_onepassword-internal` - Isolated 1Password sync
+- All external access through nginx on ports 80/443
+- Service-to-service communication on internal Docker networks
+
+### Data Persistence
+
+- **Open-WebUI**: External volume `open-webui-fw_open-webui` (preserved across updates)
+- **Authelia**: SQLite database in `services/authelia/data/`
+- **Monitoring**: Separate volumes for Prometheus, Grafana, Loki data
+- **1Password**: Encrypted cache in `onepassword-data` volume
+
+</details>
+
+<details>
+<summary><strong>📦 Services</strong></summary>
+
+## Service Directory
+
+| Service | Purpose | Access | Documentation |
+|---------|---------|--------|---------------|
+| **Open-WebUI** | AI chat interface with multi-LLM support | `https://webui.yourdomain.com` | [Open-WebUI Docs](https://docs.openwebui.com) |
+| **Perplexica** | AI-powered search engine | `https://perplexica.yourdomain.com` | [Perplexica GitHub](https://github.com/ItzCrazyKns/Perplexica) |
+| **Authelia** | Authentication portal with MFA | `https://auth.yourdomain.com` | [services/authelia/README.md](services/authelia/README.md) |
+| **Homepage** | Unified platform dashboard | `https://homepage.yourdomain.com` | [services/homepage/README.md](services/homepage/README.md) |
+| **Glance** | RSS feed monitoring dashboard | `https://glance.yourdomain.com` | [Glance GitHub](https://github.com/glanceapp/glance) |
+| **Grafana** | Metrics and logs visualization | `https://monitoring.yourdomain.com` | [services/monitoring/README.md](services/monitoring/README.md) |
+| **1Password Connect** | Secure secret management API | `http://localhost:8090` | [services/onepassword/README.md](services/onepassword/README.md) |
+
+### Service States
+
+**Currently Active:**
+- ✅ Open-WebUI (production + canary)
+- ✅ Perplexica + SearXNG
+- ✅ Authelia + Redis
+- ✅ Homepage + Glance
+- ✅ PGLA monitoring stack
+- ✅ Nginx reverse proxy
+- ✅ Watchtower (production + canary)
+
+**In Development:**
+- 🚧 PostgreSQL (memory storage backend)
+- 🚧 1Password Connect (currently using CLI injection)
+
+### Modular Configuration
+
+Services use Docker Compose's `include` feature for modularity:
+
+```yaml
+# docker-compose.yml
+include:
+  - path: services/open-webui/docker-compose.yml
+  - path: services/perplexica/docker-compose.yml
+  - path: services/authelia/docker-compose.yml
+  - path: services/nginx/docker-compose.yml
+  - path: services/homepage/docker-compose.yml
+  - path: services/glance/docker-compose.yml
+  - path: services/monitoring/docker-compose.yml
+  # - path: services/onepassword/docker-compose.yml  # Optional
+```
+
+To disable a service, comment out its include line and restart: `docker compose up -d`
+
+</details>
+
+<details>
+<summary><strong>🚀 Quick Start</strong></summary>
 
 ## Quick Start
 
-```bash
-# Generate all configuration files from templates
-./create-all-from-templates.sh
+### Prerequisites
 
-# Edit .env with your settings (generated from template)
-vim .env
-
-# Start all services
-docker compose up -d
-
-# Check status
-docker compose ps
-
-# View logs
-docker compose logs -f [service-name]
-```
-
-<details>
-<summary><strong>📋 Prerequisites & Setup Requirements</strong></summary>
-
-Before deploying Carian Observatory, ensure you have:
-
-### Essential Requirements
 - **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux)
-- **Docker Compose** v2.20+ (for modular include feature)
-- **Git** (for cloning repository)
-- **Basic terminal/command line** familiarity
+- **Docker Compose** v2.20+ (for `include` feature support)
+- **1Password CLI** (optional, for secret management)
+- Available ports: 80, 443, 8080-8093, 9090-9100
 
-**Platform Note**: This repository was designed with **macOS usage in mind**. Windows and Linux users may experience variations in certain setup steps (YMMV - Your Mileage May Vary).
+**Platform Note**: Designed for macOS. Linux and Windows may require minor adjustments.
 
-### Security Management Options
+### Installation
 
-Choose your preferred secret management approach:
+1. **Generate configuration files from templates:**
+   ```bash
+   ./create-all-from-templates.sh
+   ```
 
-#### Option A: **1Password CLI** (Recommended)
-- 1Password account with CLI access
-- Service Account or personal vault access
-- Automatic secret injection and rotation
+2. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   vim .env
+   ```
 
-#### Option B: **Manual Configuration**
-- Manual `.env` file management
-- Direct API key configuration
-- Good for personal deployments
+   Key variables to set:
+   - `PRIMARY_DOMAIN` - Your domain (e.g., `example.com`)
+   - `AUTHELIA_SESSION_SECRET` - Generate with `openssl rand -hex 32`
+   - `AUTHELIA_STORAGE_ENCRYPTION_KEY` - Generate with `openssl rand -hex 32`
+   - `GRAFANA_PASSWORD` - Secure admin password
 
-#### Option C: **Alternative Tools**
-- Other secret management solutions
-- Custom environment variable handling
+3. **Deploy SSL certificates:**
 
-### Network Requirements
-- Available ports: 80, 443 (nginx), 8080-8090 (services)
-- Domain names or localhost setup
-- SSL certificate access (self-signed or CA-issued)
+   Place certificates in `services/nginx/ssl/`:
+   ```bash
+   webui.yourdomain.com.crt + .key
+   perplexica.yourdomain.com.crt + .key
+   auth.yourdomain.com.crt + .key
+   homepage.yourdomain.com.crt + .key
+   glance.yourdomain.com.crt + .key
+   monitoring.yourdomain.com.crt + .key
+   ```
+
+   Or generate self-signed:
+   ```bash
+   openssl req -x509 -newkey rsa:2048 -keyout domain.key -out domain.crt -days 365 -nodes
+   ```
+
+4. **Start the platform:**
+   ```bash
+   docker compose up -d
+   ```
+
+5. **Verify deployment:**
+   ```bash
+   docker compose ps
+   ```
+
+### First-Time Setup
+
+**Configure Authelia:**
+1. Navigate to `https://auth.yourdomain.com`
+2. Register first user (becomes admin)
+3. Set up WebAuthn/FIDO2 or TOTP 2FA
+
+**Access Services:**
+- Open-WebUI: `https://webui.yourdomain.com`
+- Perplexica: `https://perplexica.yourdomain.com`
+- Homepage: `https://homepage.yourdomain.com`
+- Grafana: `https://monitoring.yourdomain.com`
+
+All services require authentication via Authelia.
+
+### Optional: 1Password Integration
+
+For automated API key management:
+
+```bash
+# Start 1Password Connect Server
+cd services/onepassword
+./scripts/manage-connect-server.sh start
+
+# Deploy API keys from 1Password vault
+./scripts/deploy-api-keys.sh
+```
+
+See [services/onepassword/README.md](services/onepassword/README.md) for detailed setup.
 
 </details>
 
 <details>
-<summary><strong>🏗️ Services & Architecture</strong></summary>
+<summary><strong>🔐 Security Model</strong></summary>
 
-### Core Services
-- **Open-WebUI**: AI chat interface at `https://webui.yourdomain.com`
-- **Perplexica**: AI-powered search at `https://perplexica.yourdomain.com`
-- **Authelia**: Authentication portal at `https://auth.yourdomain.com`
-- **Homepage**: Unified dashboard at `https://homepage.yourdomain.com`
-- **Glance**: Monitoring dashboard at `https://glance.yourdomain.com`
-- **Grafana**: Observability platform at `https://monitoring.yourdomain.com`
-- **Nginx**: Reverse proxy with SSL termination
+## Security Architecture
 
-### Architecture
+### Template-Based Configuration
 
-```
-services/
-├── nginx/          # Reverse proxy and SSL termination
-├── authelia/       # Authentication + Redis
-├── open-webui/     # AI chat interface (production + canary)
-├── perplexica/     # AI search (includes SearXNG)
-├── homepage/       # Unified platform dashboard
-├── glance/         # Monitoring dashboard with RSS feeds
-├── monitoring/     # PGLA stack (Prometheus + Grafana + Loki + Alertmanager)
-└── onepassword/    # 1Password Connect API for secure credential management
-```
+Carian Observatory uses a template system to prevent secrets from entering version control:
 
-</details>
-
-<details>
-<summary><strong>⚙️ Configuration & Service Management</strong></summary>
-
-### Enable/Disable Services
-Edit `docker-compose.yml` and comment out unwanted services:
-```yaml
-include:
-  - path: services/open-webui/docker-compose.yml
-  # - path: services/monitoring/docker-compose.yml  # Disabled
-```
-
-### Canary Testing
-Test latest Open-WebUI version without affecting production:
-```yaml
-include:
-  - path: services/open-webui/docker-compose.canary.yml
-```
-Access at `http://localhost:8081`
-
-</details>
-
-<details>
-<summary><strong>📝 Template System & Security</strong></summary>
-
-Carian Observatory uses a secure template system that separates configuration templates (safe to commit) from generated files with real domains (gitignored for security).
-
-### Structure
+**Structure:**
 ```
 carian-observatory/
-├── templates/              # Safe to commit - generic domains only
-│   ├── .env.template       # Environment variables with placeholders
-│   ├── services/           # Mirrors actual service structure
-│   │   ├── homepage/
-│   │   │   ├── configs/    # *.yaml.template files
-│   │   │   └── scripts/    # *.sh.template files
-│   │   ├── authelia/
-│   │   ├── nginx/
-│   │   └── [other-services]/
-│   └── scripts/
-│       └── infrastructure/ # System management script templates
-├── services/               # Generated files (gitignored)
-│   ├── homepage/
-│   │   ├── configs/        # *.yaml files with real domains
-│   │   └── scripts/        # *.sh files with real domains
-│   └── [other-services]/
-└── create-all-from-templates.sh  # Master generation script
+├── templates/                    # Safe for git
+│   ├── .env.template
+│   └── services/
+│       └── {service}/
+│           ├── configs/*.template
+│           └── scripts/*.template
+├── services/                     # Gitignored
+│   └── {service}/
+│       ├── configs/*.yaml        # Real domains
+│       └── scripts/*.sh          # Real domains
+└── create-all-from-templates.sh  # Generator script
 ```
 
-### Usage
+**Process:**
+1. Templates use `yourdomain.com` placeholders
+2. `create-all-from-templates.sh` generates working files with real domains
+3. Generated files are automatically gitignored
+4. Only templates are committed to version control
 
-1. **Generate all files from templates:**
-   ```bash
-   ./create-all-from-templates.sh
-   ```
+### Secret Management
 
-2. **Edit templates (safe to commit):**
-   ```bash
-   # Edit any .template file in templates/ directory
-   vim templates/services/homepage/configs/settings.yaml.template
+**1Password Connect API:**
+- Sync container maintains encrypted vault cache
+- API container provides REST access to secrets
+- CLI injection for runtime secret deployment
+- No secrets stored in containers or environment files
 
-   # Regenerate working files
-   ./create-all-from-templates.sh
-   ```
+**Environment Variables:**
+- Critical secrets in `.env` (gitignored)
+- Templates use `${VARIABLE}` substitution
+- API keys retrieved from 1Password vault
 
-3. **Add new service templates:**
-   ```bash
-   # Create service template directory
-   mkdir -p templates/services/newservice/{configs,scripts}
+### Authentication Layer
 
-   # Add templates with yourdomain.com placeholders
-   echo "domain: yourdomain.com" > templates/services/newservice/configs/config.yaml.template
+**Authelia Configuration:**
+- Default policy: `deny` (explicit allow required)
+- All services require authentication
+- WebAuthn/FIDO2 support for hardware keys
+- TOTP for software-based 2FA
+- Session persistence in Redis
 
-   # Update master script to process new templates
-   vim create-all-from-templates.sh
-   ```
+**Access Control:**
+```yaml
+# services/authelia/configs/configuration.yml
+access_control:
+  default_policy: 'deny'
+  rules:
+    - domain: 'webui.yourdomain.com'
+      policy: 'two_factor'
+    - domain: 'perplexica.yourdomain.com'
+      policy: 'two_factor'
+```
 
-### Security Benefits
-- ✅ **Zero domain exposure risk**: Only generic `yourdomain.com` in git history
-- ✅ **Automatic gitignore**: Generated files are directory-level excluded
-- ✅ **Template versioning**: Safe collaboration on configuration changes
-- ✅ **1Password integration**: Handles encrypted environment variables seamlessly
+**Important**: When adding services, update Authelia access control or requests will return 403 Forbidden.
 
-### Template Variables
-Templates support two processing modes:
-- **Simple substitution**: `yourdomain.com` → your actual domain
-- **Environment variables**: `${VARIABLE_NAME}` → value from `.env` file
+### SSL/TLS Implementation
 
-### Complete Template Coverage
+- All external traffic terminates SSL at nginx
+- Service-to-service communication over internal Docker networks
+- Certificates managed in `services/nginx/ssl/`
+- Automatic HTTP to HTTPS redirects
 
-The template system now covers **ALL** scripts and configurations:
+### Network Isolation
 
-#### Script Templates (`templates/scripts/`)
-- **Authentication** (6 scripts): Password management, 2FA setup, YubiKey configuration
-- **Certificates** (4 scripts): SSL deployment, certificate migration, setup utilities
-- **Infrastructure** (2 scripts): Host management, secret-enabled startup
-- **Migration** (5 scripts): Portfolio migration, modular conversion, summary tools
-- **OnePassword** (6 scripts): Connect API, OTC retrieval, certificate storage
-- **Monitoring** (system monitoring scripts)
-- **Root-level** (4 scripts): Repository sanitization, Authelia configuration
-
-#### Service Templates (`templates/services/`)
-- **Authelia**: Full authentication configuration
-- **Nginx**: HTTPS reverse proxy configuration with all service domains
-- **Homepage**: Unified dashboard configuration and startup scripts
-- **Glance**: Monitoring dashboard configuration
-- **Monitoring**: PGLA observability stack configuration
-
-Total: **28 script templates** ensuring zero domain exposure (including infrastructure management)
+- Services communicate on `carian-observatory_app-network`
+- 1Password sync isolated on `onepassword-internal` network
+- No direct external access to services (nginx proxy only)
+- Container-to-container communication via Docker DNS
 
 </details>
 
 <details>
-<summary><strong>🔐 SSL Certificates & Environment Variables</strong></summary>
+<summary><strong>🛠️ Operations</strong></summary>
 
-## SSL Certificates
+## Daily Operations
 
-Place certificates in `services/nginx/ssl/`:
-- `webui.yourdomain.com.crt` + `.key`
-- `perplexica.yourdomain.com.crt` + `.key`
-- `auth.yourdomain.com.crt` + `.key`
+### Common Commands
 
-**Note**: Simplified domain names are used for local networks (no machine ID suffix).
+| Task | Command | Description |
+|------|---------|-------------|
+| **Start All Services** | `docker compose up -d` | Starts platform |
+| **Stop All Services** | `docker compose down` | Stops platform |
+| **View Status** | `docker compose ps` | Shows service health |
+| **View Logs** | `docker compose logs -f [service]` | Follow service logs |
+| **Restart Service** | `docker restart [container-name]` | Restart specific container |
 
-Generate self-signed certificates:
+### Service Group Management
+
+**Authentication Stack:**
 ```bash
-openssl req -x509 -newkey rsa:2048 -keyout domain.key -out domain.crt -days 365 -nodes
+docker logs co-authelia-service co-authelia-redis
+docker restart co-authelia-service co-authelia-redis
 ```
 
-## Environment Variables
-
-Key variables in `.env`:
-- `AUTHELIA_SESSION_SECRET` - 32-character hex string
-- `AUTHELIA_STORAGE_ENCRYPTION_KEY` - 32-character hex string
-- `OPENAI_API_KEY` - OpenAI API access
-- `CLAUDE_API_KEY` - Anthropic Claude access
-
-</details>
-
-<details>
-<summary><strong>🔧 Maintenance & Troubleshooting</strong></summary>
-
-## Maintenance
-
+**Web Interface Stack:**
 ```bash
-# Stop all services
-docker compose down
+docker logs co-open-webui-service co-open-webui-canary
+docker restart co-open-webui-service
+```
 
-# Update services
+**AI Search Stack:**
+```bash
+docker logs co-perplexica-service co-perplexica-searxng
+docker restart co-perplexica-service co-perplexica-searxng
+```
+
+**Monitoring Stack:**
+```bash
+docker logs co-monitoring-prometheus co-monitoring-grafana
+docker logs co-monitoring-loki co-monitoring-alertmanager
+docker restart co-monitoring-prometheus co-monitoring-grafana
+```
+
+### Troubleshooting
+
+**403 Forbidden Errors:**
+- Check Authelia access control rules in `services/authelia/configs/configuration.yml`
+- Ensure service domain is explicitly allowed
+- Verify nginx configuration includes service
+
+**Service Won't Start:**
+```bash
+docker compose logs [service-name]
+docker inspect [container-name]
+```
+
+**Authentication Issues:**
+```bash
+docker logs co-authelia-service
+docker logs co-authelia-redis
+docker exec co-authelia-service cat /config/configuration.yml
+```
+
+**SSL Certificate Problems:**
+```bash
+docker exec co-nginx-service nginx -t
+ls -la services/nginx/ssl/
+docker restart co-nginx-service
+```
+
+**Network Connectivity:**
+```bash
+docker network inspect carian-observatory_app-network
+docker exec co-nginx-service ping co-authelia-service
+```
+
+### Updating Services
+
+**Production Services:**
+- Updated weekly via `co-ow-watchtower-service`
+- Monitors: open-webui, perplexica, authelia, nginx
+
+**Canary Services:**
+- Updated daily via `co-ow-watchtower-canary`
+- Monitors: open-webui-canary
+
+**Manual Updates:**
+```bash
 docker compose pull
 docker compose up -d
-
-# Clean up
-docker system prune -a
 ```
 
-## Troubleshooting
+### Data Backup
 
-Check service logs:
+**Critical Data Locations:**
+- Open-WebUI: `open-webui-fw_open-webui` volume
+- Authelia: `services/authelia/data/`
+- Monitoring: `co-prometheus-data`, `co-grafana-data`, `co-loki-data` volumes
+
+**Backup Command:**
 ```bash
-docker compose logs nginx
-docker compose logs authelia
-docker compose logs open-webui
+docker run --rm -v open-webui-fw_open-webui:/data -v $(pwd):/backup alpine tar czf /backup/openwebui-backup.tar.gz /data
 ```
 
-Reset Authelia database:
+### Detailed Operations
+
+See subdirectory READMEs for detailed operational guides:
+- [Authentication Scripts](scripts/authentication/README.md)
+- [Infrastructure Scripts](scripts/infrastructure/README.md)
+- [1Password Scripts](scripts/onepassword/README.md)
+
+</details>
+
+<details>
+<summary><strong>🔧 Development</strong></summary>
+
+## Development Workflow
+
+### Adding New Services
+
+1. **Create service directory:**
+   ```bash
+   mkdir -p services/newservice/{configs,scripts}
+   ```
+
+2. **Create docker-compose.yml:**
+   ```yaml
+   # services/newservice/docker-compose.yml
+   services:
+     newservice:
+       image: your/image:tag
+       container_name: co-newservice-service
+       restart: unless-stopped
+       networks:
+         - app-network
+
+   networks:
+     app-network:
+       name: ${COMPOSE_PROJECT_NAME}_app-network
+   ```
+
+3. **Add to master docker-compose.yml:**
+   ```yaml
+   include:
+     - path: services/newservice/docker-compose.yml
+   ```
+
+4. **Configure nginx routing:**
+   ```bash
+   vim services/nginx/configs/https.conf.template
+   ```
+
+   Add server block for new service.
+
+5. **Update Authelia access control:**
+   ```yaml
+   # services/authelia/configs/configuration.yml
+   access_control:
+     rules:
+       - domain: 'newservice.yourdomain.com'
+         policy: 'two_factor'
+   ```
+
+6. **Update environment variables:**
+   ```bash
+   vim .env.example
+   ```
+
+7. **Restart services:**
+   ```bash
+   docker restart co-authelia-service co-nginx-service
+   docker compose up -d
+   ```
+
+### Testing Strategy
+
+**Canary Testing:**
+- Canary services receive daily updates
+- Test new versions before production deployment
+- Production services receive weekly updates after validation
+
+**Service Verification:**
 ```bash
-rm services/auth/data/db.sqlite3
-docker compose restart authelia
+# Check service health
+docker compose ps
+
+# Test authentication flow
+curl -I https://newservice.yourdomain.com
+
+# Verify nginx configuration
+docker exec co-nginx-service nginx -t
 ```
 
-## Production Data
+### Configuration Templates
 
-**IMPORTANT**: The Open-WebUI production volume `open-webui-fw_open-webui` contains all user data and must be preserved. It's referenced as an external volume and won't be deleted by Docker Compose operations.
+**Creating Templates:**
+1. Write configuration with `yourdomain.com` placeholders
+2. Save as `.template` file in `templates/services/{service}/`
+3. Add generation logic to `create-all-from-templates.sh`
+4. Generate working files: `./create-all-from-templates.sh`
+
+**Template Variables:**
+- `yourdomain.com` → Replaced with `${PRIMARY_DOMAIN}`
+- `${VARIABLE}` → Replaced with environment variable value
 
 </details>
 
 ---
 
-<details>
-<summary><strong>🚀 TL;DR - Most Common Commands & Operations Guide</strong></summary>
-
-# TL;DR - Most Common Commands
-
-Quick reference for daily operations. All commands run from `carian-observatory/` directory.
-
-## 📋 Daily Operations
-
-| Task | Command | What it Does |
-|------|---------|--------------|
-| **🚀 Start Everything** | `./scripts/infrastructure/start-with-secrets.sh` | Starts all services with API keys |
-| **💚 Health Check** | `./scripts/infrastructure/health-check.sh` | Full system health check |
-| **🔄 Smart Restart** | `./scripts/infrastructure/smart-restart.sh` | Intelligently restarts services |
-| **📊 Service Status** | `docker compose ps` | Shows all container status |
-| **📝 View Logs** | `docker compose logs -f [service]` | Follow logs for specific service |
-
-## 🔐 Authentication & 1Password
-
-| Task | Command | What it Does |
-|------|---------|--------------|
-| **🔑 Get OTC (Passkey Setup)** | `python scripts/authentication/get_otc.py` | Extracts OTC for passkey registration |
-| **🧹 Get OTC + Auto-cleanup** | `python scripts/authentication/get_otc.py --auto-cleanup 30` | Gets OTC, clears file after 30s |
-| **🚀 Start 1Password Server** | `./scripts/onepassword/manage-connect-server.sh start` | Starts 1Password Connect Server |
-| **🔑 Deploy API Keys** | `./scripts/onepassword/deploy-api-keys.sh` | Pulls API keys from 1Password |
-| **📱 Monitor 2FA Setup** | `./scripts/authentication/monitor-2fa-setup.sh` | Shows TOTP QR codes |
-
-## 🎯 Service Groups (New Structured Architecture)
-
-### 🔐 Authentication Stack
-```bash
-docker logs co-authelia-service co-authelia-redis     # View auth logs
-docker restart co-authelia-service co-authelia-redis  # Restart auth stack
-```
-
-### 🌐 Web Interface Stack
-```bash
-docker logs co-open-webui-service                     # Production logs
-docker logs co-open-webui-canary                      # Canary logs
-docker restart co-open-webui-service                  # Restart production
-docker restart co-open-webui-canary                   # Restart canary
-```
-
-### 🔍 AI Search Stack
-```bash
-docker logs co-perplexica-service co-perplexica-searxng   # Search logs
-docker restart co-perplexica-service co-perplexica-searxng # Restart search
-```
-
-### 📊 Dashboard Stack
-```bash
-docker logs co-homepage-service co-homepage-iframe-proxy  # Dashboard logs
-docker logs co-glance-service                             # Monitoring dashboard
-docker restart co-homepage-service co-glance-service      # Restart dashboards
-```
-
-### 📈 Observability Stack (PGLA)
-```bash
-docker logs co-monitoring-prometheus co-monitoring-grafana   # Core metrics
-docker logs co-monitoring-loki co-monitoring-alertmanager   # Logs & alerts
-docker restart co-monitoring-prometheus                     # Restart metrics
-docker restart co-monitoring-grafana                        # Restart dashboards
-```
-
-### 🔄 Update Management
-```bash
-docker logs co-ow-watchtower-service                  # Weekly production updates
-docker logs co-ow-watchtower-canary                   # Daily canary updates
-```
-
-## 🛠️ Common Workflows
-
-### **Adding a Passkey to Authelia**
-```bash
-# 1. Go to https://auth-m4.yourdomain.com → Settings → Security
-# 2. Click "Add Passkey", when it says "OTC sent to email":
-python scripts/authentication/get_otc.py
-# 3. Paste (Cmd+V) the code in browser
-```
-
-### **Morning Startup Routine**
-```bash
-./scripts/infrastructure/health-check.sh              # Check system health
-./scripts/infrastructure/start-with-secrets.sh        # Start with API keys
-docker compose ps                                     # Verify all running
-```
-
-### **Troubleshooting Issues**
-```bash
-./scripts/infrastructure/health-check.sh              # Diagnose problems
-docker compose logs nginx                             # Check proxy logs
-./scripts/infrastructure/smart-restart.sh [service]   # Restart problematic service
-```
-
-### **1Password Setup (First Time)**
-```bash
-./scripts/onepassword/manage-connect-server.sh start  # Start Connect Server
-./scripts/onepassword/manage-connect-server.sh token create  # Generate token
-export CONNECT_TOKEN="your-token"                     # Set token
-./scripts/onepassword/deploy-api-keys.sh --validate   # Test connection
-```
-
-## 📊 Visual Service Map
+## Project Structure
 
 ```
-📡 Carian Observatory Platform
-├── 🔐 Authentication
-│   ├── co-authelia-service     (port 9091)
-│   └── co-authelia-redis       (port 6379)
-├── 🌐 Web Interface
-│   ├── co-open-webui-service   (prod, port 8080)
-│   └── co-open-webui-canary    (test, port 8081)
-├── 🔍 AI Search
-│   ├── co-perplexica-service   (port 3000)
-│   └── co-perplexica-searxng   (port 8080)
-├── 📊 Dashboard Integration
-│   ├── co-homepage-service     (port 3000)
-│   ├── co-homepage-iframe-proxy (port 3001)
-│   └── co-glance-service       (port 61208)
-├── 📈 Observability (PGLA Stack)
-│   ├── co-monitoring-prometheus (port 9090)
-│   ├── co-monitoring-grafana   (port 3000)
-│   ├── co-monitoring-loki      (port 3100)
-│   ├── co-monitoring-alertmanager (port 9093)
-│   ├── co-monitoring-cadvisor  (port 8080)
-│   └── co-monitoring-node-exporter (port 9100)
-├── 🌉 Infrastructure
-│   ├── co-nginx-service        (ports 80/443)
-│   ├── co-1p-connect-sync      (1Password sync)
-│   └── co-1p-connect-api       (port 8090)
-└── 🔄 Updates
-    ├── co-ow-watchtower-service (weekly)
-    └── co-ow-watchtower-canary  (daily)
+carian-observatory/
+├── docker-compose.yml              # Master service orchestration
+├── .env.example                    # Environment configuration template
+├── create-all-from-templates.sh    # Configuration generator
+├── services/                       # Modular service definitions
+│   ├── authelia/                   # Authentication service
+│   ├── open-webui/                 # AI chat interface
+│   ├── perplexica/                 # AI search engine
+│   ├── homepage/                   # Platform dashboard
+│   ├── glance/                     # Monitoring dashboard
+│   ├── monitoring/                 # PGLA observability stack
+│   ├── nginx/                      # Reverse proxy + SSL
+│   └── onepassword/                # Secret management
+├── templates/                      # Configuration templates (git-safe)
+└── scripts/                        # Operational scripts
+    ├── authentication/             # Auth management scripts
+    ├── infrastructure/             # Platform management scripts
+    └── onepassword/                # Secret deployment scripts
 ```
 
-## 🔗 Detailed Script Documentation
+## Design Principles
 
-- 🔐 [Authentication Scripts](scripts/authentication/README.md) - Passkey, 2FA, OTC tools
-- 🏗️ [Infrastructure Scripts](scripts/infrastructure/README.md) - Startup, health, restart tools  
-- 🔑 [1Password Scripts](scripts/onepassword/README.md) - Connect Server, API key management
+### What This Project Prioritizes
 
-## 💡 Pro Tips
+**Security by Default:**
+- Multi-factor authentication required for all services
+- Template-based configuration preventing secret exposure
+- 1Password integration for centralized secret management
+- SSL/TLS encryption for all external traffic
+- Default-deny access control policies
 
-- 🎯 **Use service groups**: Restart related services together (auth stack, web stack, etc.)
-- 🧹 **Auto-cleanup OTCs**: Use `--auto-cleanup 30` to clear notification files automatically
-- 📊 **Visual health checks**: The health check script shows color-coded status for easy scanning
-- 🔄 **Smart restarts**: The smart restart script only restarts what's actually running
-- 🎨 **Visual design**: All scripts use emojis and clear formatting for easier scanning
+**Operational Excellence:**
+- Modular architecture for independent service management
+- Comprehensive observability (metrics, logs, alerts)
+- Automated updates with canary testing
+- Clear separation between production and testing environments
 
-</details>
+**Maintainability:**
+- Infrastructure as code with version control
+- Self-documenting configuration templates
+- Standardized container naming conventions
+- Detailed operational documentation
+
+### What This Project Avoids
+
+**Anti-Patterns Explicitly Rejected:**
+- ❌ Hardcoded secrets in configuration files or code
+- ❌ Services without authentication requirements
+- ❌ Single-factor authentication
+- ❌ Secrets committed to version control
+- ❌ Unencrypted service communication
+- ❌ Missing observability and monitoring
+- ❌ Manual update processes without testing
+- ❌ Monolithic architectures preventing independent scaling
+
+**Security Standards:**
+- No API keys in environment files committed to git
+- No default passwords or weak authentication
+- No unauthenticated service endpoints
+- No plain HTTP for external traffic
+- No shared credentials across services
+
+This platform demonstrates security-conscious infrastructure design with practical implementations of modern DevOps practices.
