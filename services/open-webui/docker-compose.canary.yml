@@ -21,20 +21,19 @@ services:
       - SCARF_NO_ANALYTICS=true
       - DO_NOT_TRACK=true
       - ANONYMIZED_TELEMETRY=false
-      # PostgreSQL Integration
-      - DATABASE_URL=${DATABASE_URL}
-      - VECTOR_DB=${VECTOR_DB:-pgvector}
-      - PGVECTOR_MAX_VECTOR_LENGTH=${PGVECTOR_MAX_VECTOR_LENGTH:-1536}
-      - PGVECTOR_AUTO_CREATE_EXTENSION=${PGVECTOR_AUTO_CREATE_EXTENSION:-false}
-      # Memory feature enhancement
-      - ENABLE_MEMORY_FEATURE=true
-      - MEMORY_AUTO_CLEANUP=false
+      # PostgreSQL Integration - DISABLED due to upstream bug (Discussion #15300)
+      # Canary will use SQLite until Open-WebUI fixes handle_peewee_migration UnboundLocalError
+      # - DATABASE_URL=${DATABASE_URL}
+      # - VECTOR_DB=${VECTOR_DB:-pgvector}
+      # - PGVECTOR_MAX_VECTOR_LENGTH=${PGVECTOR_MAX_VECTOR_LENGTH:-1536}
+      # - PGVECTOR_AUTO_CREATE_EXTENSION=${PGVECTOR_AUTO_CREATE_EXTENSION:-false}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - app-network
-    depends_on:
-      - postgresql
+    # PostgreSQL dependency removed - using SQLite until upstream bug fixed
+    # depends_on:
+    #   - postgresql
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -44,33 +43,34 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.scope=canary"
 
-  # PostgreSQL service for canary testing
-  postgresql:
-    image: pgvector/pgvector:pg18
-    container_name: co-postgresql-service
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRESQL_DB}
-      POSTGRES_USER: ${POSTGRESQL_USER}
-      POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
-      TZ: UTC
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-      - ../postgresql/init:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "5432:5432"
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER} -d ${POSTGRESQL_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+  # PostgreSQL service for canary testing - DISABLED due to upstream bug
+  # Re-enable when Open-WebUI fixes handle_peewee_migration (Discussion #15300)
+  # postgresql:
+  #   image: pgvector/pgvector:pg18
+  #   container_name: co-postgresql-service
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRESQL_DB}
+  #     POSTGRES_USER: ${POSTGRESQL_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
+  #     TZ: UTC
+  #   volumes:
+  #     - postgresql-data:/var/lib/postgresql/data
+  #     - ../postgresql/init:/docker-entrypoint-initdb.d:ro
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - app-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER} -d ${POSTGRESQL_DB}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
 
-volumes:
-  postgresql-data:
-    name: ${COMPOSE_PROJECT_NAME}_postgresql-data
+# volumes:
+#   postgresql-data:
+#     name: ${COMPOSE_PROJECT_NAME}_postgresql-data
 
 networks:
   app-network:
