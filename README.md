@@ -1,10 +1,10 @@
 # Carian Observatory
 
-A self-hosted AI infrastructure platform with modular architecture, authenticated access control, and comprehensive observability.
+A self-hosted AI infrastructure platform with modular architecture, authenticated access control, and comprehensive observability. 
 
-<img width="1000" height="563" alt="The_Three_sister" src="https://github.com/user-attachments/assets/5debed05-156c-4b42-a5e8-eade5546f593" />
+<img width="1000" height="563" alt="Caria" src="https://static.wikia.nocookie.net/eldenring/images/6/64/Caria_Manor_2.png/revision/latest?cb=20230410051038" />
 
-<img width="1440" height="939" alt="CleanShot 2025-09-21 at 17 50 23" src="https://github.com/user-attachments/assets/09962829-d1ad-4e53-aa35-3aa2fa9eca6d" />
+_(naming scheme inspired by Elden Ring)_
 
 ## Overview
 
