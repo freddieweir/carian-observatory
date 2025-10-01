@@ -118,6 +118,13 @@ services/monitoring/alertmanager/alertmanager.yml
 services/authelia/configs/configuration.yml
 services/homepage/configs/services.yaml
 
+# PostgreSQL generated files (from templates)
+services/postgresql/docker-compose.yml
+services/postgresql/configs/postgresql.conf
+services/postgresql/init/01-init-pgvector.sql
+services/postgresql/scripts/memory-manager.sh
+services/postgresql/scripts/import-memories.py
+
 # =============================================================================
 # GLOBAL TEMPLATE ALLOWANCES
 # =============================================================================
