@@ -4,7 +4,8 @@ A self-hosted AI infrastructure platform with modular architecture, authenticate
 
 <img width="1000" height="563" alt="Caria" src="https://static.wikia.nocookie.net/eldenring/images/6/64/Caria_Manor_2.png/revision/latest?cb=20230410051038" />
 
-_(naming scheme inspired by Elden Ring)_
+_Naming scheme inspired by Elden Ring ([Image Source](https://eldenring.fandom.com/wiki/Caria_Manor?file=Caria_Manor_2.png))_
+
 
 ## Overview
 
