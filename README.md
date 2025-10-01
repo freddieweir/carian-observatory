@@ -1,14 +1,5 @@
 # Carian Observatory
 
-A self-hosted AI infrastructure platform with modular architecture, authenticated access control, and comprehensive observability. 
-
-<img width="1000" height="563" alt="Caria" src="https://static.wikia.nocookie.net/eldenring/images/6/64/Caria_Manor_2.png/revision/latest?cb=20230410051038" />
-
-_Naming scheme inspired by Elden Ring ([Image Source](https://eldenring.fandom.com/wiki/Caria_Manor?file=Caria_Manor_2.png))_
-
-
-## Overview
-
 Carian Observatory is a Docker-based platform that integrates multiple AI services behind a unified authentication layer. It provides:
 
 - **AI Chat Interface** via Open-WebUI with support for multiple LLM providers
@@ -20,6 +11,11 @@ Carian Observatory is a Docker-based platform that integrates multiple AI servic
 - **Smart Update Strategy** using dual watchtower configuration (production + canary)
 
 All services communicate over private Docker networks with SSL/TLS termination at the nginx reverse proxy layer. Configuration templates ensure no secrets are committed to version control.
+<img width="1000" height="563" alt="Caria" src="https://static.wikia.nocookie.net/eldenring/images/6/64/Caria_Manor_2.png/revision/latest?cb=20230410051038" />
+
+_Naming scheme inspired by Elden Ring ([Image Source](https://eldenring.fandom.com/wiki/Caria_Manor?file=Caria_Manor_2.png))_
+
+## Overview
 
 <details>
 <summary><strong>🏗️ Architecture</strong></summary>
