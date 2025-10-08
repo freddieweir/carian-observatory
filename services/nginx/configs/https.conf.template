@@ -57,6 +57,57 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
+        # Enable response body filtering for session validator injection
+        sub_filter_once off;
+
+        # Inject proactive session validator to detect expiry before user submits
+        sub_filter '</body>' '<script>
+(function() {
+    "use strict";
+    let isChecking = false;
+    let consecutiveFailures = 0;
+    const MAX_FAILURES = 3;
+
+    // Check session validity every 60 seconds
+    const checkSession = async () => {
+        if (isChecking) return;
+        isChecking = true;
+
+        try {
+            const response = await fetch(window.location.href, {
+                method: "HEAD",
+                cache: "no-cache",
+                credentials: "same-origin"
+            });
+
+            // If we get 401 or redirect, session expired
+            if (response.status === 401 || response.redirected) {
+                console.warn("[Session Monitor] Authentication expired, redirecting to login...");
+                window.location.href = "https://auth.yourdomain.com/?rd=" + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            // Reset failure counter on success
+            consecutiveFailures = 0;
+        } catch (err) {
+            consecutiveFailures++;
+            console.error("[Session Monitor] Check failed (" + consecutiveFailures + "/" + MAX_FAILURES + "):", err);
+
+            // Stop checking after repeated failures to prevent resource waste
+            if (consecutiveFailures >= MAX_FAILURES) {
+                console.warn("[Session Monitor] Max failures reached, disabling monitor");
+                clearInterval(sessionCheckInterval);
+            }
+        } finally {
+            isChecking = false;
+        }
+    };
+
+    const sessionCheckInterval = setInterval(checkSession, 60000);
+    console.info("[Session Monitor] Proactive session checking enabled (60s interval)");
+})();
+</script></body>';
+
         proxy_pass http://co-open-webui-canary:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -144,7 +195,58 @@ server {
         auth_request /authelia;
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
-        
+
+        # Enable response body filtering for session validator injection
+        sub_filter_once off;
+
+        # Inject proactive session validator to detect expiry before user submits
+        sub_filter '</body>' '<script>
+(function() {
+    "use strict";
+    let isChecking = false;
+    let consecutiveFailures = 0;
+    const MAX_FAILURES = 3;
+
+    // Check session validity every 60 seconds
+    const checkSession = async () => {
+        if (isChecking) return;
+        isChecking = true;
+
+        try {
+            const response = await fetch(window.location.href, {
+                method: "HEAD",
+                cache: "no-cache",
+                credentials: "same-origin"
+            });
+
+            // If we get 401 or redirect, session expired
+            if (response.status === 401 || response.redirected) {
+                console.warn("[Session Monitor] Authentication expired, redirecting to login...");
+                window.location.href = "https://auth.yourdomain.com/?rd=" + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            // Reset failure counter on success
+            consecutiveFailures = 0;
+        } catch (err) {
+            consecutiveFailures++;
+            console.error("[Session Monitor] Check failed (" + consecutiveFailures + "/" + MAX_FAILURES + "):", err);
+
+            // Stop checking after repeated failures to prevent resource waste
+            if (consecutiveFailures >= MAX_FAILURES) {
+                console.warn("[Session Monitor] Max failures reached, disabling monitor");
+                clearInterval(sessionCheckInterval);
+            }
+        } finally {
+            isChecking = false;
+        }
+    };
+
+    const sessionCheckInterval = setInterval(checkSession, 60000);
+    console.info("[Session Monitor] Proactive session checking enabled (60s interval)");
+})();
+</script></body>';
+
         proxy_pass http://co-open-webui-service:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -160,7 +262,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;
