@@ -513,3 +513,4 @@ readmes/
 # 1. Edit templates in templates/ directory
 # 2. Run ./create-all-from-templates.sh to generate working files
 # 3. Only commit template changes to git
+.mcp.json
