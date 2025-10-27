@@ -26,7 +26,7 @@ jobs:
       is-rust: ${{ steps.detect.outputs.is-rust }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Detect project type
         id: detect
@@ -69,7 +69,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -131,7 +131,7 @@ jobs:
         node-version: ['18.x', '20.x', '22.x']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -172,7 +172,7 @@ jobs:
         go-version: ['1.21', '1.22', '1.23']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v5
@@ -198,7 +198,7 @@ jobs:
     if: needs.detect-language.outputs.is-rust == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
