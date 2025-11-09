@@ -1,0 +1,130 @@
+# Authelia Configuration Template
+# Two-Factor Authentication with YubiKey/Passkey Support
+# Environment variables are substituted at runtime
+
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
+server:
+  address: 'tcp://0.0.0.0:9091/'
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+log:
+  level: info
+  format: text
+  keep_stdout: true
+
+# =============================================================================
+# TOTP CONFIGURATION (Backup 2FA)
+# =============================================================================
+totp:
+  disable: false
+  issuer: 'Carian Observatory'
+  algorithm: 'sha1'
+  digits: 6
+  period: 30
+  skew: 1
+
+# =============================================================================
+# WEBAUTHN CONFIGURATION (YubiKey/Passkey Support)
+# =============================================================================
+webauthn:
+  disable: false
+  timeout: 60s
+  display_name: 'Carian Observatory Authentication'
+  attestation_conveyance_preference: 'indirect'
+  user_verification: 'preferred'
+
+# =============================================================================
+# AUTHENTICATION BACKEND
+# =============================================================================
+authentication_backend:
+  password_reset:
+    disable: true
+  file:
+    path: '/config/users_database.yml'
+    password:
+      algorithm: 'argon2'
+      argon2:
+        variant: 'argon2id'
+        iterations: 3
+        memory: 65536
+        parallelism: 4
+        key_length: 32
+        salt_length: 16
+
+# =============================================================================
+# ACCESS CONTROL
+# =============================================================================
+access_control:
+  default_policy: 'deny'
+  rules:
+    # Two-factor authentication for all services
+    - domain: '*.${PRIMARY_DOMAIN}'
+      policy: 'two_factor'
+    
+    # Specific service domains with two-factor
+    - domain: '${WEBUI_DOMAIN}'
+      policy: 'two_factor'
+    - domain: '${PERPLEXICA_DOMAIN}'
+      policy: 'two_factor'
+    - domain: '${AUTH_DOMAIN}'
+      policy: 'two_factor'
+    - domain: '${CANARY_DOMAIN}'
+      policy: 'two_factor'
+    
+    # Allow localhost access for testing (one-factor only)
+    - domain: '127.0.0.1'
+      policy: 'one_factor'
+    - domain: 'localhost'
+      policy: 'one_factor'
+    
+    # Generic domain support for fallback
+    - domain: '${GENERIC_WEBUI_DOMAIN}'
+      policy: 'two_factor'
+    - domain: '${GENERIC_PERPLEXICA_DOMAIN}'
+      policy: 'two_factor'
+    - domain: '${GENERIC_AUTH_DOMAIN}'
+      policy: 'two_factor'
+
+# =============================================================================
+# SESSION CONFIGURATION  
+# =============================================================================
+session:
+  cookies:
+    - name: 'authelia_session'
+      domain: '${PRIMARY_DOMAIN}'
+      authelia_url: 'https://${AUTH_DOMAIN}'
+      expiration: '1h'
+      inactivity: '5m'
+      remember_me: '1M'
+      same_site: 'lax'
+  redis:
+    host: 'redis'
+    port: 6379
+    database_index: 0
+
+# =============================================================================
+# REGULATION (Brute Force Protection)
+# =============================================================================
+regulation:
+  max_retries: 3
+  find_time: '2m'
+  ban_time: '5m'
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+storage:
+  local:
+    path: '/data/db.sqlite3'
+
+# =============================================================================
+# NOTIFICATION CONFIGURATION
+# =============================================================================
+notifier:
+  disable_startup_check: false
+  filesystem:
+    filename: '/data/notification.txt'

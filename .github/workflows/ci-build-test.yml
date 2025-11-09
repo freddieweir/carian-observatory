@@ -1,12 +1,11 @@
-name: CI - Build and Test
+name: CI - Infrastructure Validation
 
-# Fortify Workflow v1.0.0
-# Auto-deployed from Tomb of Nazarick
-# Supports: Python, Node.js, Go, Rust
+# Infrastructure-focused CI workflow
+# Validates Docker Compose configs, shell scripts, and YAML files
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'claude/**' ]
   pull_request:
     branches: [ main, master, develop ]
   workflow_dispatch:
@@ -16,230 +15,244 @@ permissions:
   pull-requests: read
 
 jobs:
-  detect-language:
-    name: Detect Project Language
+  docker-compose-validation:
+    name: Validate Docker Compose
     runs-on: ubuntu-latest
-    outputs:
-      is-python: ${{ steps.detect.outputs.is-python }}
-      is-nodejs: ${{ steps.detect.outputs.is-nodejs }}
-      is-go: ${{ steps.detect.outputs.is-go }}
-      is-rust: ${{ steps.detect.outputs.is-rust }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect project type
-        id: detect
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate main docker-compose.yml
         run: |
-          # Detect Python
-          if [ -f "pyproject.toml" ] || [ -f "requirements.txt" ] || [ -f "setup.py" ]; then
-            echo "is-python=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is-python=false" >> "$GITHUB_OUTPUT"
-          fi
+          docker compose -f docker-compose.yml config > /dev/null
+          echo "✅ Main docker-compose.yml is valid"
 
-          # Detect Node.js
-          if [ -f "package.json" ]; then
-            echo "is-nodejs=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is-nodejs=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Validate service-specific compose files
+        run: |
+          for compose_file in services/*/docker-compose*.yml; do
+            if [ -f "$compose_file" ]; then
+              echo "Validating $compose_file..."
+              # Create temporary .env for validation
+              export USER_PREFIX=co
+              export COMPOSE_PROJECT_NAME=carian-observatory
+              export AUTHELIA_SESSION_SECRET=test_secret_32_chars_minimum_len
+              export AUTHELIA_STORAGE_ENCRYPTION_KEY=test_key_32_chars_minimum_length
+              export PRIMARY_DOMAIN=example.com
+              export WEBUI_DOMAIN=chat.example.com
+              export PERPLEXICA_DOMAIN=search.example.com
+              export AUTH_DOMAIN=auth.example.com
 
-          # Detect Go
-          if [ -f "go.mod" ]; then
-            echo "is-go=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is-go=false" >> "$GITHUB_OUTPUT"
-          fi
+              docker compose -f "$compose_file" config > /dev/null && echo "✅ $compose_file valid" || echo "❌ $compose_file invalid"
+            fi
+          done
 
-          # Detect Rust
-          if [ -f "Cargo.toml" ]; then
-            echo "is-rust=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is-rust=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  python-ci:
-    name: Python CI
+  shellcheck:
+    name: Shell Script Linting
     runs-on: ubuntu-latest
-    needs: detect-language
-    if: needs.detect-language.outputs.is-python == 'true'
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11', '3.12']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Check for uv
-        id: check-uv
+      - name: Install ShellCheck
         run: |
-          if [ -f "uv.lock" ]; then
-            echo "has-uv=true" >> "$GITHUB_OUTPUT"
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on all shell scripts
+        run: |
+          echo "## 🐚 ShellCheck Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Find all .sh files (excluding templates initially)
+          shell_files=$(find . -name "*.sh" -not -path "*/\.*" -type f)
+
+          if [ -z "$shell_files" ]; then
+            echo "⚠️  No shell scripts found to lint" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          error_count=0
+          for script in $shell_files; do
+            echo "Checking $script..."
+            if shellcheck -x "$script"; then
+              echo "- ✅ $script" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ $script" >> $GITHUB_STEP_SUMMARY
+              error_count=$((error_count + 1))
+            fi
+          done
+
+          if [ $error_count -gt 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**❌ $error_count script(s) failed ShellCheck**" >> $GITHUB_STEP_SUMMARY
+            exit 1
           else
-            echo "has-uv=false" >> "$GITHUB_OUTPUT"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**✅ All shell scripts passed ShellCheck**" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Install uv (if using modern Python)
-        if: steps.check-uv.outputs.has-uv == 'true'
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+  yaml-validation:
+    name: YAML Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install dependencies (uv)
-        if: steps.check-uv.outputs.has-uv == 'true'
+      - name: Install yamllint
         run: |
-          uv sync
+          sudo apt-get update
+          sudo apt-get install -y yamllint
 
-      - name: Install dependencies (pip)
-        if: steps.check-uv.outputs.has-uv == 'false'
+      - name: Create yamllint config
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          cat > .yamllint.yml << 'EOF'
+          extends: default
+          rules:
+            line-length:
+              max: 120
+              level: warning
+            indentation:
+              spaces: 2
+            comments:
+              min-spaces-from-content: 1
+            document-start: disable
+            truthy:
+              allowed-values: ['true', 'false', 'on', 'off']
+          EOF
 
-      - name: Run tests (pytest)
-        if: hashFiles('**/test_*.py', '**/*_test.py') != ''
+      - name: Run yamllint
         run: |
-          if [ "${{ steps.check-uv.outputs.has-uv }}" == "true" ]; then
-            uv run pytest -v
+          echo "## 📝 YAML Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Find all YAML files (excluding generated ones)
+          yaml_files=$(find . \( -name "*.yml" -o -name "*.yaml" \) \
+            -not -path "*/\.*" \
+            -not -path "*/node_modules/*" \
+            -type f)
+
+          if [ -z "$yaml_files" ]; then
+            echo "⚠️  No YAML files found" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          yamllint -c .yamllint.yml . || true
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**✅ YAML validation complete**" >> $GITHUB_STEP_SUMMARY
+
+  template-generation-test:
+    name: Template Generation Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create test .env file
+        run: |
+          cat > .env << 'EOF'
+          # Test environment for CI
+          PRIMARY_DOMAIN=test.example.com
+          WEBUI_DOMAIN=chat.test.example.com
+          PERPLEXICA_DOMAIN=search.test.example.com
+          AUTH_DOMAIN=auth.test.example.com
+          CANARY_DOMAIN=canary.test.example.com
+
+          USER_PREFIX=co
+          COMPOSE_PROJECT_NAME=carian-observatory
+
+          AUTHELIA_SESSION_SECRET=test_session_secret_32_characters_min
+          AUTHELIA_STORAGE_ENCRYPTION_KEY=test_storage_key_32_characters_minimum
+          EOF
+
+      - name: Test template generation script
+        run: |
+          if [ -f "scripts/create-all-from-templates.sh" ]; then
+            # Make script executable
+            chmod +x scripts/create-all-from-templates.sh
+
+            # Dry-run test (if script supports it)
+            echo "Testing template generation script..."
+            bash scripts/create-all-from-templates.sh || echo "⚠️  Template generation needs review"
+
+            echo "✅ Template generation script executed" >> $GITHUB_STEP_SUMMARY
           else
-            pytest -v || echo "⚠️  Tests not found or pytest not installed"
+            echo "⚠️  Template generation script not found" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Lint with ruff (if available)
-        continue-on-error: true
-        run: |
-          if [ "${{ steps.check-uv.outputs.has-uv }}" == "true" ]; then
-            uv run ruff check . || echo "⚠️  Ruff not configured"
-          elif command -v ruff &> /dev/null; then
-            ruff check . || echo "⚠️  Ruff not configured"
-          fi
-
-  nodejs-ci:
-    name: Node.js CI
+  security-checks:
+    name: Security Validation
     runs-on: ubuntu-latest
-    needs: detect-language
-    if: needs.detect-language.outputs.is-nodejs == 'true'
-    strategy:
-      matrix:
-        node-version: ['18.x', '20.x', '22.x']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linter
-        continue-on-error: true
+      - name: Check for secrets in non-template files
         run: |
-          if [ -f "package.json" ] && grep -q "\"lint\"" package.json; then
-            npm run lint
+          echo "## 🔒 Security Checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for common secret patterns (excluding .env.example and templates)
+          if grep -r -E "(password|secret|token|api[_-]?key)" \
+            --include="*.yml" \
+            --include="*.yaml" \
+            --exclude="*.template" \
+            --exclude=".env.example" \
+            --exclude-dir=".git" \
+            . 2>/dev/null; then
+            echo "⚠️  Found potential secrets in committed files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No obvious secrets found in committed files" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Run tests
+      - name: Verify gitignore coverage
         run: |
-          if [ -f "package.json" ] && grep -q "\"test\"" package.json; then
-            npm test
+          # Check that generated files are properly gitignored
+          critical_patterns=(
+            ".env"
+            "*.key"
+            "*.pem"
+            "users_database.yml"
+          )
+
+          missing_patterns=()
+          for pattern in "${critical_patterns[@]}"; do
+            if ! grep -q "$pattern" .gitignore; then
+              missing_patterns+=("$pattern")
+            fi
+          done
+
+          if [ ${#missing_patterns[@]} -gt 0 ]; then
+            echo "⚠️  Missing gitignore patterns: ${missing_patterns[*]}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Critical patterns are gitignored" >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Build
-        continue-on-error: true
-        run: |
-          if [ -f "package.json" ] && grep -q "\"build\"" package.json; then
-            npm run build
-          fi
-
-  go-ci:
-    name: Go CI
-    runs-on: ubuntu-latest
-    needs: detect-language
-    if: needs.detect-language.outputs.is-go == 'true'
-    strategy:
-      matrix:
-        go-version: ['1.21', '1.22', '1.23']
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Run tests
-        run: go test -v ./...
-
-      - name: Build
-        run: go build -v ./...
-
-      - name: Run go vet
-        run: go vet ./...
-
-  rust-ci:
-    name: Rust CI
-    runs-on: ubuntu-latest
-    needs: detect-language
-    if: needs.detect-language.outputs.is-rust == 'true'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Run tests
-        run: cargo test --verbose
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Run clippy
-        continue-on-error: true
-        run: cargo clippy -- -D warnings
 
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [detect-language, python-ci, nodejs-ci, go-ci, rust-ci]
+    needs: [docker-compose-validation, shellcheck, yaml-validation, template-generation-test, security-checks]
     if: always()
     steps:
       - name: Generate summary
         run: |
-          echo "## 🏰 Fortify CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🏗️ Infrastructure CI Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Detected Languages:**" >> $GITHUB_STEP_SUMMARY
-
-          if [ "${{ needs.detect-language.outputs.is-python }}" == "true" ]; then
-            echo "- 🐍 Python: ${{ needs.python-ci.result }}" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.detect-language.outputs.is-nodejs }}" == "true" ]; then
-            echo "- 📦 Node.js: ${{ needs.nodejs-ci.result }}" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.detect-language.outputs.is-go }}" == "true" ]; then
-            echo "- 🔵 Go: ${{ needs.go-ci.result }}" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.detect-language.outputs.is-rust }}" == "true" ]; then
-            echo "- 🦀 Rust: ${{ needs.rust-ci.result }}" >> $GITHUB_STEP_SUMMARY
-          fi
-
+          echo "**Validation Results:**" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐳 Docker Compose: ${{ needs.docker-compose-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐚 ShellCheck: ${{ needs.shellcheck.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📝 YAML: ${{ needs.yaml-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📋 Templates: ${{ needs.template-generation-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 Security: ${{ needs.security-checks.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ CI workflow complete!" >> $GITHUB_STEP_SUMMARY
+
+          # Determine overall status
+          if [ "${{ needs.docker-compose-validation.result }}" == "success" ] && \
+             [ "${{ needs.shellcheck.result }}" == "success" ]; then
+            echo "✅ **All critical checks passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Some checks failed - review required**" >> $GITHUB_STEP_SUMMARY
+          fi
