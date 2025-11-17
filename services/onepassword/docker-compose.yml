@@ -20,18 +20,15 @@ services:
       # Shared volume for encrypted data cache between sync and API containers
       - onepassword-data:/home/opuser/.op/data
     environment:
-      # Optional: Configure logging level
-      OP_LOG_LEVEL: INFO
+      # Debug logging to troubleshoot bootstrap issues
+      OP_LOG_LEVEL: DEBUG
       # Health check configuration
       OP_HTTP_PORT: 8081
     networks:
       - onepassword-internal
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - onepassword-external  # Needs internet to sync with 1Password.com
+    # Health check disabled - container is minimal and lacks curl/pgrep
+    # Rely on restart policy and API container's start_period instead
     labels:
       - "com.carian-observatory.service=onepassword-connect-sync"
       - "com.carian-observatory.description=1Password Connect Server - Sync Component"
@@ -41,9 +38,10 @@ services:
     container_name: ${USER_PREFIX:-co}-1p-connect-api
     restart: unless-stopped
     depends_on:
-      onepassword-connect-sync:
-        condition: service_healthy
+      - onepassword-connect-sync
     volumes:
+      # Mount credentials file for token validation
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
       # Shared volume with sync container for accessing cached secrets
       - onepassword-data:/home/opuser/.op/data:ro
     environment:
@@ -58,12 +56,8 @@ services:
     ports:
       # Internal API access for other services
       - "127.0.0.1:8090:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 45s
+    # Health check disabled - container is minimal and lacks curl/pgrep
+    # Rely on restart policy instead
     labels:
       - "com.carian-observatory.service=onepassword-connect-api"
       - "com.carian-observatory.description=1Password Connect Server - API Component"
@@ -76,7 +70,14 @@ networks:
     labels:
       - "com.carian-observatory.network=onepassword-internal"
       - "com.carian-observatory.description=Isolated network for 1Password Connect components"
-  
+
+  # External network for sync container to reach 1Password.com
+  onepassword-external:
+    driver: bridge
+    labels:
+      - "com.carian-observatory.network=onepassword-external"
+      - "com.carian-observatory.description=External network for 1Password.com authentication"
+
   # Connect to main application network for service access
   carian-observatory_app-network:
     external: true
