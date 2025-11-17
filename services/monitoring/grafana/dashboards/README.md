@@ -25,7 +25,7 @@ Real-time health monitoring dashboard for the audio-monitor service.
 
 ### Option 1: Via Grafana UI
 
-1. **Open Grafana**: https://monitoring.yourdomain.com (or http://10.211.55.2:3000)
+1. **Open Grafana**: https://monitoring.yourdomain.com (or http://localhost:3000)
 2. **Login**: Use admin credentials from `.env` file
 3. **Navigate**: Dashboards → New → Import
 4. **Upload**: Click "Upload JSON file"
@@ -39,7 +39,7 @@ Real-time health monitoring dashboard for the audio-monitor service.
 
 ```bash
 # Set Grafana credentials
-GRAFANA_URL="http://10.211.55.2:3000"
+GRAFANA_URL="http://localhost:3000"
 GRAFANA_USER="admin"
 GRAFANA_PASS="your-password-from-env"
 
@@ -220,12 +220,12 @@ groups:
 **Check**:
 1. Is Loki data source configured correctly?
    ```bash
-   curl http://10.211.55.2:3100/ready
+   curl http://localhost:3100/ready
    ```
 
 2. Are heartbeats being sent?
    ```bash
-   curl -G "http://10.211.55.2:3100/loki/api/v1/query" \
+   curl -G "http://localhost:3100/loki/api/v1/query" \
      --data-urlencode 'query={service="audio-monitor", type="heartbeat"}' \
      --data-urlencode 'limit=1'
    ```
@@ -264,7 +264,7 @@ Should see: `Started heartbeat monitor (60s interval)`
 
 **Wait 60 seconds** for first heartbeat, then check Loki:
 ```bash
-curl -G "http://10.211.55.2:3100/loki/api/v1/labels" | grep -i service
+curl -G "http://localhost:3100/loki/api/v1/labels" | grep -i service
 ```
 
 Should see `"service"` in the labels list.

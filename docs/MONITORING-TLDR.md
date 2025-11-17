@@ -6,13 +6,13 @@ Quick reference for carian-observatory's PGLA (Prometheus + Grafana + Loki + Ale
 
 | Component | Purpose | Port | URL | Status Check |
 |-----------|---------|------|-----|--------------|
-| **Prometheus** | Metrics collection & storage | 9090 | http://10.211.55.2:9090 | `curl http://10.211.55.2:9090/-/healthy` |
-| **Grafana** | Visualization & dashboards | 3000 | https://monitoring.yourdomain.com | `curl http://10.211.55.2:3000/api/health` |
-| **Loki** | Log aggregation & query | 3100 | http://10.211.55.2:3100 | `curl http://10.211.55.2:3100/ready` |
-| **Alertmanager** | Alert routing & grouping | 9093 | http://10.211.55.2:9093 | `curl http://10.211.55.2:9093/-/healthy` |
+| **Prometheus** | Metrics collection & storage | 9090 | http://localhost:9090 | `curl http://localhost:9090/-/healthy` |
+| **Grafana** | Visualization & dashboards | 3000 | https://monitoring.yourdomain.com | `curl http://localhost:3000/api/health` |
+| **Loki** | Log aggregation & query | 3100 | http://localhost:3100 | `curl http://localhost:3100/ready` |
+| **Alertmanager** | Alert routing & grouping | 9093 | http://localhost:9093 | `curl http://localhost:9093/-/healthy` |
 | **Promtail** | Log shipping to Loki | 9080 | N/A (agent) | Logs to Loki |
-| **cAdvisor** | Container metrics | 8080 | http://10.211.55.2:8080 | `curl http://10.211.55.2:8080/healthz` |
-| **Node Exporter** | System metrics | 9100 | http://10.211.55.2:9100 | `curl http://10.211.55.2:9100/metrics` |
+| **cAdvisor** | Container metrics | 8080 | http://localhost:8080 | `curl http://localhost:8080/healthz` |
+| **Node Exporter** | System metrics | 9100 | http://localhost:9100 | `curl http://localhost:9100/metrics` |
 
 ## 📊 For Applications: Sending Logs to Loki
 
@@ -42,7 +42,7 @@ def send_log_to_loki(message: str, level: str = "INFO", service: str = "my-app")
 
     try:
         response = requests.post(
-            "http://10.211.55.2:3100/loki/api/v1/push",
+            "http://localhost:3100/loki/api/v1/push",
             json=payload,
             timeout=5
         )
@@ -65,7 +65,7 @@ from audio_monitor.monitoring import setup_monitoring
 
 # Setup in your application
 metrics = setup_monitoring(
-    loki_url="http://10.211.55.2:3100",
+    loki_url="http://localhost:3100",
     service_name="my-service"
 )
 
@@ -110,17 +110,17 @@ sum by (level) (count_over_time({service="audio-monitor"}[1h]))
 START=$(date -u -v-5M +%s)000000000  # 5 minutes ago
 END=$(date -u +%s)000000000           # now
 
-curl -G "http://10.211.55.2:3100/loki/api/v1/query_range" \
+curl -G "http://localhost:3100/loki/api/v1/query_range" \
   --data-urlencode "query={service=\"audio-monitor\"}" \
   --data-urlencode "start=$START" \
   --data-urlencode "end=$END" \
   --data-urlencode "limit=100"
 
 # List available labels
-curl "http://10.211.55.2:3100/loki/api/v1/labels"
+curl "http://localhost:3100/loki/api/v1/labels"
 
 # List values for a label
-curl "http://10.211.55.2:3100/loki/api/v1/label/service/values"
+curl "http://localhost:3100/loki/api/v1/label/service/values"
 ```
 
 ## 📈 Sending Metrics to Prometheus
@@ -199,7 +199,7 @@ Configure notification channels in `/services/monitoring/alertmanager/config.yml
 
 ### Access
 
-- **URL**: https://monitoring.yourdomain.com (or http://10.211.55.2:3000)
+- **URL**: https://monitoring.yourdomain.com (or http://localhost:3000)
 - **Username**: admin
 - **Password**: Check `.env` file → `GRAFANA_PASSWORD`
 
@@ -228,10 +228,10 @@ Import community dashboards from [Grafana Dashboard Gallery](https://grafana.com
 
 ```bash
 # All services
-curl http://10.211.55.2:9090/-/healthy  # Prometheus
-curl http://10.211.55.2:3000/api/health # Grafana
-curl http://10.211.55.2:3100/ready      # Loki
-curl http://10.211.55.2:9093/-/healthy  # Alertmanager
+curl http://localhost:9090/-/healthy  # Prometheus
+curl http://localhost:3000/api/health # Grafana
+curl http://localhost:3100/ready      # Loki
+curl http://localhost:9093/-/healthy  # Alertmanager
 
 # Container status
 docker ps | grep co-monitoring
@@ -337,13 +337,13 @@ docker run --rm -v co-loki-data:/data -v $(pwd):/backup alpine \
 docker logs co-monitoring-promtail | grep -i error
 
 # Check Loki ingestion
-curl http://10.211.55.2:3100/metrics | grep loki_ingester_chunks_created_total
+curl http://localhost:3100/metrics | grep loki_ingester_chunks_created_total
 
 # Verify timestamp is recent (not too old)
 date +%s000000000  # Current timestamp in nanoseconds
 
 # Test direct push
-curl -X POST http://10.211.55.2:3100/loki/api/v1/push \
+curl -X POST http://localhost:3100/loki/api/v1/push \
   -H "Content-Type: application/json" \
   -d "{\"streams\":[{\"stream\":{\"service\":\"test\"},\"values\":[[\"$(date +%s000000000)\",\"Test message\"]]}]}"
 ```
@@ -359,7 +359,7 @@ curl -X POST http://10.211.55.2:3100/loki/api/v1/push \
 
 ```bash
 # Check Prometheus targets page
-open http://10.211.55.2:9090/targets
+open http://localhost:9090/targets
 
 # Verify service is exposing /metrics endpoint
 curl http://my-service:8000/metrics
