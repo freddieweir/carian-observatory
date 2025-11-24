@@ -93,3 +93,35 @@ scrape_configs:
   #     - targets: ['open-webui:8080']
   #   metrics_path: '/health'  # If available
   #   scrape_interval: 30s
+
+  # ===========================================
+  # Remote Devices via Tailscale VPN
+  # ===========================================
+
+  # Gaming PC - System Metrics (Node Exporter)
+  # NOTE: Uses host proxy on ports 19100/19200 because Docker can't reach Tailscale directly
+  # Run on Mac: socat TCP-LISTEN:19100,fork,reuseaddr TCP:100.94.123.5:9100 &
+  - job_name: 'gaming-pc-node'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['host.docker.internal:19100']
+        labels:
+          instance: 'cachyos-gaming'
+          host: 'gaming-pc'
+          location: 'home'
+          os: 'linux'
+          distro: 'cachyos'
+
+  # Gaming PC - AMD GPU Metrics (Radeon Exporter)
+  # Run on Mac: socat TCP-LISTEN:19200,fork,reuseaddr TCP:100.94.123.5:9200 &
+  - job_name: 'gaming-pc-gpu'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['host.docker.internal:19200']
+        labels:
+          instance: 'cachyos-gaming'
+          host: 'gaming-pc'
+          gpu_vendor: 'amd'
+          gpu_model: 'rx9070'
