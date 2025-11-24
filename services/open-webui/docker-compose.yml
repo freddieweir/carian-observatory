@@ -11,7 +11,8 @@ services:
       # This is the existing production data that must be preserved
       - open-webui-data:/app/backend/data
     environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - OPENAI_API_BASE_URLS=${OLLAMA_BASE_URL};${LM_STUDIO_BASE_URL}
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
       - ENABLE_OPENROUTER_API=${ENABLE_OPENROUTER_API:-true}
