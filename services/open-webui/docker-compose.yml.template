@@ -36,6 +36,11 @@ services:
       start_period: 40s
     labels:
       - "com.centurylinklabs.watchtower.scope=service"
+      - "glance.name=Open-WebUI"
+      - "glance.icon=si:openai"
+      - "glance.url=https://webui.${PRIMARY_DOMAIN:-yourdomain.com}"
+      - "glance.category=webui"
+      - "glance.description=AI chat interface (Production)"
 
 volumes:
   open-webui-data:

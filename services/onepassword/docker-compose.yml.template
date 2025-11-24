@@ -35,6 +35,10 @@ services:
     labels:
       - "com.${COMPOSE_PROJECT_NAME:-yourdomain}.service=onepassword-connect-sync"
       - "com.${COMPOSE_PROJECT_NAME:-yourdomain}.description=1Password Connect Server - Sync Component"
+      - "glance.name=1Password Sync"
+      - "glance.icon=si:1password"
+      - "glance.category=core"
+      - "glance.description=Secret sync with 1Password.com"
 
   onepassword-connect-api:
     image: 1password/connect-api:latest
@@ -67,6 +71,10 @@ services:
     labels:
       - "com.${COMPOSE_PROJECT_NAME:-yourdomain}.service=onepassword-connect-api"
       - "com.${COMPOSE_PROJECT_NAME:-yourdomain}.description=1Password Connect Server - API Component"
+      - "glance.name=1Password API"
+      - "glance.icon=si:1password"
+      - "glance.category=core"
+      - "glance.description=Secret management REST API"
 
 networks:
   # Internal network for Connect Server components
