@@ -93,3 +93,44 @@ scrape_configs:
   #     - targets: ['open-webui:8080']
   #   metrics_path: '/health'  # If available
   #   scrape_interval: 30s
+
+  # ===========================================
+  # Remote Devices via Tailscale VPN
+  # ===========================================
+  #
+  # CONFIGURATION: Customize the following values for your environment:
+  # - instance: Unique identifier for this remote device
+  # - Proxy ports: Configure in .env (GAMING_PC_NODE_PORT, GAMING_PC_GPU_PORT)
+  # - Tailscale IP: Your remote device's Tailscale IP address
+  # - Labels: Update OS, distro, GPU model to match your hardware
+  #
+  # Setup socat proxies on host machine to bridge Docker to Tailscale:
+  #   socat TCP-LISTEN:${GAMING_PC_NODE_PORT},fork,reuseaddr TCP:<TAILSCALE_IP>:9100 &
+  #   socat TCP-LISTEN:${GAMING_PC_GPU_PORT},fork,reuseaddr TCP:<TAILSCALE_IP>:9200 &
+  # ===========================================
+
+  # Remote Gaming PC - System Metrics (Node Exporter)
+  - job_name: 'remote-gaming-node'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['host.docker.internal:${GAMING_PC_NODE_PORT}']
+        labels:
+          instance: '${GAMING_PC_INSTANCE_NAME}'
+          host: '${GAMING_PC_HOST_LABEL}'
+          location: '${GAMING_PC_LOCATION}'
+          os: '${GAMING_PC_OS}'
+          distro: '${GAMING_PC_DISTRO}'
+
+  # Remote Gaming PC - GPU Metrics (GPU Exporter)
+  # Supports: AMD (radeon-exporter), NVIDIA (nvidia-gpu-exporter)
+  - job_name: 'remote-gaming-gpu'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['host.docker.internal:${GAMING_PC_GPU_PORT}']
+        labels:
+          instance: '${GAMING_PC_INSTANCE_NAME}'
+          host: '${GAMING_PC_HOST_LABEL}'
+          gpu_vendor: '${GAMING_PC_GPU_VENDOR}'
+          gpu_model: '${GAMING_PC_GPU_MODEL}'

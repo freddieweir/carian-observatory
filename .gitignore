@@ -118,6 +118,10 @@ services/monitoring/alertmanager/alertmanager.yml
 services/authelia/configs/configuration.yml
 services/homepage/configs/services.yaml
 
+# Prometheus generated configs (from templates)
+services/monitoring/prometheus/prometheus.yml
+services/monitoring/prometheus/alerts.yml
+
 # PostgreSQL generated files (from templates)
 services/postgresql/docker-compose.yml
 services/postgresql/configs/postgresql.conf
