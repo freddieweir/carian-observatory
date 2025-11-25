@@ -205,13 +205,14 @@ services:
   # Watchtower Services (preserved from original)
   # Main service watchtower - Daily updates for production stability
   watchtower-service:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:latest
     container_name: co-ow-watchtower-service
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - TZ=UTC
+      - DOCKER_API_VERSION=1.44
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_INCLUDE_RESTARTING=true
@@ -225,6 +226,10 @@ services:
     labels:
       - "com.carian-observatory.watchtower.scope=service"
       - "com.carian-observatory.watchtower.schedule=daily"
+      - "glance.name=Watchtower Service"
+      - "glance.icon=si:docker"
+      - "glance.category=core"
+      - "glance.description=Auto-update (daily production)"
     command: >
       --scope service
       ${USER_PREFIX}-open-webui-service
@@ -236,13 +241,14 @@ services:
 
   # Canary watchtower - Hourly updates for testing
   watchtower-canary:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:latest
     container_name: co-ow-watchtower-canary
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - TZ=UTC
+      - DOCKER_API_VERSION=1.44
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_INCLUDE_RESTARTING=true
@@ -256,6 +262,10 @@ services:
     labels:
       - "com.carian-observatory.watchtower.scope=canary"
       - "com.carian-observatory.watchtower.schedule=hourly"
+      - "glance.name=Watchtower Canary"
+      - "glance.icon=si:docker"
+      - "glance.category=core"
+      - "glance.description=Auto-update (hourly canary)"
     command: >
       --scope canary
       ${USER_PREFIX}-open-webui-canary
