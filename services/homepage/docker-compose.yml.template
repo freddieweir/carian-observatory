@@ -11,6 +11,12 @@ services:
     volumes:
       - ./configs:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      glance.name: "Homepage"
+      glance.icon: "si:homepage"
+      glance.url: "https://homepage.${PRIMARY_DOMAIN:-yourdomain.com}"
+      glance.category: "dashboard"
+      glance.description: "Platform services dashboard"
     environment:
       - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_DOMAIN:-homepage.yourdomain.com},${GENERIC_HOMEPAGE_DOMAIN:-homepage.yourdomain.com}
       - PUID=1000
@@ -37,6 +43,11 @@ services:
       - "3001:3001"
     volumes:
       - ./nginx/iframe-proxy.conf:/etc/nginx/conf.d/default.conf
+    labels:
+      glance.name: "Iframe Proxy"
+      glance.icon: "si:nginx"
+      glance.category: "dashboard"
+      glance.description: "Cross-origin iframe security proxy"
     depends_on:
       - homepage
     networks:

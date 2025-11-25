@@ -10,6 +10,13 @@ services:
       - "8092:8080"
     volumes:
       - ./configs:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      glance.name: "Glance"
+      glance.icon: "si:glance"
+      glance.url: "https://glance.${PRIMARY_DOMAIN:-yourdomain.com}"
+      glance.category: "dashboard"
+      glance.description: "Multi-page monitoring dashboard"
     environment:
       - HOMEPAGE_INTERNAL_URL=http://${USER_PREFIX}-homepage-service:3000
       - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}

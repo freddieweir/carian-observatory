@@ -9,6 +9,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    labels:
+      glance.name: "Nginx"
+      glance.icon: "si:nginx"
+      glance.category: "core"
+      glance.description: "Reverse proxy and SSL termination"
     environment:
       - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - MACHINE_ID=${MACHINE_ID}
