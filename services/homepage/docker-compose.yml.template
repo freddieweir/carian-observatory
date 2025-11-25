@@ -26,6 +26,9 @@ services:
       - CANARY_DOMAIN=${CANARY_DOMAIN}
       - PERPLEXICA_DOMAIN=${PERPLEXICA_DOMAIN}
       - AUTH_DOMAIN=${AUTH_DOMAIN}
+      # 1Password Connect integration
+      - OP_CONNECT_HOST=http://${USER_PREFIX}-1p-connect-api:8080
+      - OP_CONNECT_TOKEN=${OP_CONNECT_TOKEN}
     networks:
       - app-network
     healthcheck:
