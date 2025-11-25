@@ -113,54 +113,58 @@ groups:
   # ===========================================
   # Remote Devices via Tailscale VPN
   # ===========================================
-  - name: gaming-pc-alerts
+  #
+  # CONFIGURATION: Update 'instance' label to match your prometheus.yml configuration
+  # Default: instance="remote-gaming-pc"
+  # ===========================================
+  - name: remote-gaming-pc-alerts
     rules:
-      # Target Down - Gaming PC unreachable
-      - alert: GamingPCDown
-        expr: up{instance="cachyos-gaming"} == 0
+      # Target Down - Remote Gaming PC unreachable
+      - alert: RemoteGamingPCDown
+        expr: up{instance="remote-gaming-pc"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Gaming PC is unreachable"
-          description: "Cannot scrape metrics from Gaming PC via Tailscale"
+          summary: "Remote Gaming PC is unreachable"
+          description: "Cannot scrape metrics from remote gaming PC via Tailscale"
 
       # High CPU Usage
-      - alert: GamingPCHighCPU
-        expr: 100 - (avg(rate(node_cpu_seconds_total{instance="cachyos-gaming",mode="idle"}[5m])) * 100) > 90
+      - alert: RemoteGamingPCHighCPU
+        expr: 100 - (avg(rate(node_cpu_seconds_total{instance="remote-gaming-pc",mode="idle"}[5m])) * 100) > 90
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Gaming PC CPU usage is high"
+          summary: "Remote Gaming PC CPU usage is high"
           description: "CPU usage is {{ $value | printf \"%.1f\" }}%"
 
       # High Memory Usage
-      - alert: GamingPCHighMemory
-        expr: 100 * (1 - node_memory_MemAvailable_bytes{instance="cachyos-gaming"} / node_memory_MemTotal_bytes{instance="cachyos-gaming"}) > 90
+      - alert: RemoteGamingPCHighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{instance="remote-gaming-pc"} / node_memory_MemTotal_bytes{instance="remote-gaming-pc"}) > 90
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Gaming PC memory usage is high"
+          summary: "Remote Gaming PC memory usage is high"
           description: "Memory usage is {{ $value | printf \"%.1f\" }}%"
 
       # Disk Space Low
-      - alert: GamingPCDiskSpaceLow
-        expr: 100 - (node_filesystem_avail_bytes{instance="cachyos-gaming",mountpoint="/"} / node_filesystem_size_bytes{instance="cachyos-gaming",mountpoint="/"} * 100) > 85
+      - alert: RemoteGamingPCDiskSpaceLow
+        expr: 100 - (node_filesystem_avail_bytes{instance="remote-gaming-pc",mountpoint="/"} / node_filesystem_size_bytes{instance="remote-gaming-pc",mountpoint="/"} * 100) > 85
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Gaming PC disk space is low"
+          summary: "Remote Gaming PC disk space is low"
           description: "Disk usage is {{ $value | printf \"%.1f\" }}%"
 
-      # GPU Temperature High
-      - alert: GamingPCGPUHot
-        expr: radeon_exporter_temp1_input{instance="cachyos-gaming"} / 1000 > 85
+      # GPU Temperature High (AMD Radeon Exporter metric name)
+      - alert: RemoteGamingPCGPUHot
+        expr: radeon_exporter_temp1_input{instance="remote-gaming-pc"} / 1000 > 85
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "Gaming PC GPU temperature is high"
+          summary: "Remote Gaming PC GPU temperature is high"
           description: "GPU temperature is {{ $value | printf \"%.0f\" }}C"

@@ -97,31 +97,40 @@ scrape_configs:
   # ===========================================
   # Remote Devices via Tailscale VPN
   # ===========================================
+  #
+  # CONFIGURATION: Customize the following values for your environment:
+  # - instance: Unique identifier for this remote device
+  # - Proxy ports: 19100 (node-exporter), 19200 (GPU metrics)
+  # - Tailscale IP: Your remote device's Tailscale IP address
+  # - Labels: Update OS, distro, GPU model to match your hardware
+  #
+  # Setup socat proxies on host machine to bridge Docker to Tailscale:
+  #   socat TCP-LISTEN:19100,fork,reuseaddr TCP:<TAILSCALE_IP>:9100 &
+  #   socat TCP-LISTEN:19200,fork,reuseaddr TCP:<TAILSCALE_IP>:9200 &
+  # ===========================================
 
-  # Gaming PC - System Metrics (Node Exporter)
-  # NOTE: Uses host proxy on ports 19100/19200 because Docker can't reach Tailscale directly
-  # Run on Mac: socat TCP-LISTEN:19100,fork,reuseaddr TCP:100.94.123.5:9100 &
-  - job_name: 'gaming-pc-node'
+  # Remote Gaming PC - System Metrics (Node Exporter)
+  - job_name: 'remote-gaming-node'
     scrape_interval: 15s
     scrape_timeout: 10s
     static_configs:
       - targets: ['host.docker.internal:19100']
         labels:
-          instance: 'cachyos-gaming'
+          instance: 'remote-gaming-pc'
           host: 'gaming-pc'
           location: 'home'
           os: 'linux'
-          distro: 'cachyos'
+          distro: 'linux'
 
-  # Gaming PC - AMD GPU Metrics (Radeon Exporter)
-  # Run on Mac: socat TCP-LISTEN:19200,fork,reuseaddr TCP:100.94.123.5:9200 &
-  - job_name: 'gaming-pc-gpu'
+  # Remote Gaming PC - GPU Metrics (GPU Exporter)
+  # Supports: AMD (radeon-exporter), NVIDIA (nvidia-gpu-exporter)
+  - job_name: 'remote-gaming-gpu'
     scrape_interval: 15s
     scrape_timeout: 10s
     static_configs:
       - targets: ['host.docker.internal:19200']
         labels:
-          instance: 'cachyos-gaming'
+          instance: 'remote-gaming-pc'
           host: 'gaming-pc'
           gpu_vendor: 'amd'
-          gpu_model: 'rx9070'
+          gpu_model: 'radeon'
