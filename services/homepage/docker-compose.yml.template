@@ -23,8 +23,6 @@ services:
       # 1Password Connect integration
       - OP_CONNECT_HOST=http://${USER_PREFIX}-1p-connect-api:8080
       - OP_CONNECT_TOKEN=${OP_CONNECT_TOKEN}
-      - HOMEPAGE_VAR_GRAFANA_USERNAME=${GRAFANA_USERNAME:-admin}
-      - HOMEPAGE_VAR_GRAFANA_PASSWORD=${GRAFANA_PASSWORD:-admin}
       # Media Command Center API Keys
       - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY}
       - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY}
