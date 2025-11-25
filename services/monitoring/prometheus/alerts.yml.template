@@ -115,56 +115,56 @@ groups:
   # ===========================================
   #
   # CONFIGURATION: Update 'instance' label to match your prometheus.yml configuration
-  # Default: instance="remote-gaming-pc"
+  # Default: instance="${GAMING_PC_INSTANCE_NAME}"
   # ===========================================
-  - name: remote-gaming-pc-alerts
+  - name: ${GAMING_PC_INSTANCE_NAME}-alerts
     rules:
-      # Target Down - Remote Gaming PC unreachable
-      - alert: RemoteGamingPCDown
-        expr: up{instance="remote-gaming-pc"} == 0
+      # Target Down - ${GAMING_PC_DISPLAY_NAME} unreachable
+      - alert: ${GAMING_PC_ALERT_PREFIX}Down
+        expr: up{instance="${GAMING_PC_INSTANCE_NAME}"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Remote Gaming PC is unreachable"
-          description: "Cannot scrape metrics from remote gaming PC via Tailscale"
+          summary: "${GAMING_PC_DISPLAY_NAME} is unreachable"
+          description: "Cannot scrape metrics from ${GAMING_PC_DISPLAY_NAME} via Tailscale"
 
       # High CPU Usage
-      - alert: RemoteGamingPCHighCPU
-        expr: 100 - (avg(rate(node_cpu_seconds_total{instance="remote-gaming-pc",mode="idle"}[5m])) * 100) > 90
+      - alert: ${GAMING_PC_ALERT_PREFIX}HighCPU
+        expr: 100 - (avg(rate(node_cpu_seconds_total{instance="${GAMING_PC_INSTANCE_NAME}",mode="idle"}[5m])) * 100) > 90
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Remote Gaming PC CPU usage is high"
+          summary: "${GAMING_PC_DISPLAY_NAME} CPU usage is high"
           description: "CPU usage is {{ $value | printf \"%.1f\" }}%"
 
       # High Memory Usage
-      - alert: RemoteGamingPCHighMemory
-        expr: 100 * (1 - node_memory_MemAvailable_bytes{instance="remote-gaming-pc"} / node_memory_MemTotal_bytes{instance="remote-gaming-pc"}) > 90
+      - alert: ${GAMING_PC_ALERT_PREFIX}HighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{instance="${GAMING_PC_INSTANCE_NAME}"} / node_memory_MemTotal_bytes{instance="${GAMING_PC_INSTANCE_NAME}"}) > 90
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Remote Gaming PC memory usage is high"
+          summary: "${GAMING_PC_DISPLAY_NAME} memory usage is high"
           description: "Memory usage is {{ $value | printf \"%.1f\" }}%"
 
       # Disk Space Low
-      - alert: RemoteGamingPCDiskSpaceLow
-        expr: 100 - (node_filesystem_avail_bytes{instance="remote-gaming-pc",mountpoint="/"} / node_filesystem_size_bytes{instance="remote-gaming-pc",mountpoint="/"} * 100) > 85
+      - alert: ${GAMING_PC_ALERT_PREFIX}DiskSpaceLow
+        expr: 100 - (node_filesystem_avail_bytes{instance="${GAMING_PC_INSTANCE_NAME}",mountpoint="/"} / node_filesystem_size_bytes{instance="${GAMING_PC_INSTANCE_NAME}",mountpoint="/"} * 100) > 85
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Remote Gaming PC disk space is low"
+          summary: "${GAMING_PC_DISPLAY_NAME} disk space is low"
           description: "Disk usage is {{ $value | printf \"%.1f\" }}%"
 
       # GPU Temperature High (AMD Radeon Exporter metric name)
-      - alert: RemoteGamingPCGPUHot
-        expr: radeon_exporter_temp1_input{instance="remote-gaming-pc"} / 1000 > 85
+      - alert: ${GAMING_PC_ALERT_PREFIX}GPUHot
+        expr: radeon_exporter_temp1_input{instance="${GAMING_PC_INSTANCE_NAME}"} / 1000 > 85
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "Remote Gaming PC GPU temperature is high"
+          summary: "${GAMING_PC_DISPLAY_NAME} GPU temperature is high"
           description: "GPU temperature is {{ $value | printf \"%.0f\" }}C"
