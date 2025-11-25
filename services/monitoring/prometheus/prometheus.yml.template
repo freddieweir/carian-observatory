@@ -100,13 +100,13 @@ scrape_configs:
   #
   # CONFIGURATION: Customize the following values for your environment:
   # - instance: Unique identifier for this remote device
-  # - Proxy ports: 19100 (node-exporter), 19200 (GPU metrics)
+  # - Proxy ports: Configure in .env (GAMING_PC_NODE_PORT, GAMING_PC_GPU_PORT)
   # - Tailscale IP: Your remote device's Tailscale IP address
   # - Labels: Update OS, distro, GPU model to match your hardware
   #
   # Setup socat proxies on host machine to bridge Docker to Tailscale:
-  #   socat TCP-LISTEN:19100,fork,reuseaddr TCP:<TAILSCALE_IP>:9100 &
-  #   socat TCP-LISTEN:19200,fork,reuseaddr TCP:<TAILSCALE_IP>:9200 &
+  #   socat TCP-LISTEN:${GAMING_PC_NODE_PORT},fork,reuseaddr TCP:<TAILSCALE_IP>:9100 &
+  #   socat TCP-LISTEN:${GAMING_PC_GPU_PORT},fork,reuseaddr TCP:<TAILSCALE_IP>:9200 &
   # ===========================================
 
   # Remote Gaming PC - System Metrics (Node Exporter)
