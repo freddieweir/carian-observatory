@@ -109,3 +109,62 @@ groups:
         annotations:
           summary: "Network transmission errors on {{ $labels.name }}"
           description: "Container {{ $labels.name }} experiencing network transmission issues."
+
+  # ===========================================
+  # Remote Devices via Tailscale VPN
+  # ===========================================
+  #
+  # CONFIGURATION: Update 'instance' label to match your prometheus.yml configuration
+  # Default: instance="${GAMING_PC_INSTANCE_NAME}"
+  # ===========================================
+  - name: ${GAMING_PC_INSTANCE_NAME}-alerts
+    rules:
+      # Target Down - ${GAMING_PC_DISPLAY_NAME} unreachable
+      - alert: ${GAMING_PC_ALERT_PREFIX}Down
+        expr: up{instance="${GAMING_PC_INSTANCE_NAME}"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "${GAMING_PC_DISPLAY_NAME} is unreachable"
+          description: "Cannot scrape metrics from ${GAMING_PC_DISPLAY_NAME} via Tailscale"
+
+      # High CPU Usage
+      - alert: ${GAMING_PC_ALERT_PREFIX}HighCPU
+        expr: 100 - (avg(rate(node_cpu_seconds_total{instance="${GAMING_PC_INSTANCE_NAME}",mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "${GAMING_PC_DISPLAY_NAME} CPU usage is high"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}%"
+
+      # High Memory Usage
+      - alert: ${GAMING_PC_ALERT_PREFIX}HighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{instance="${GAMING_PC_INSTANCE_NAME}"} / node_memory_MemTotal_bytes{instance="${GAMING_PC_INSTANCE_NAME}"}) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "${GAMING_PC_DISPLAY_NAME} memory usage is high"
+          description: "Memory usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Disk Space Low
+      - alert: ${GAMING_PC_ALERT_PREFIX}DiskSpaceLow
+        expr: 100 - (node_filesystem_avail_bytes{instance="${GAMING_PC_INSTANCE_NAME}",mountpoint="/"} / node_filesystem_size_bytes{instance="${GAMING_PC_INSTANCE_NAME}",mountpoint="/"} * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "${GAMING_PC_DISPLAY_NAME} disk space is low"
+          description: "Disk usage is {{ $value | printf \"%.1f\" }}%"
+
+      # GPU Temperature High (AMD Radeon Exporter metric name)
+      - alert: ${GAMING_PC_ALERT_PREFIX}GPUHot
+        expr: radeon_exporter_temp1_input{instance="${GAMING_PC_INSTANCE_NAME}"} / 1000 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "${GAMING_PC_DISPLAY_NAME} GPU temperature is high"
+          description: "GPU temperature is {{ $value | printf \"%.0f\" }}C"

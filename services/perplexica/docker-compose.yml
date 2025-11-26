@@ -14,6 +14,12 @@ services:
       - ./configs/perplexica.toml:/home/perplexica/config.toml:ro
     networks:
       - app-network
+    labels:
+      glance.name: "Perplexica"
+      glance.icon: "si:perplexity"
+      glance.url: "https://perplexica.${PRIMARY_DOMAIN}"
+      glance.category: "search"
+      glance.description: "AI-powered search engine"
     depends_on:
       - searxng
     healthcheck:
@@ -31,6 +37,11 @@ services:
       - ./configs/searxng:/etc/searxng:rw
     networks:
       - app-network
+    labels:
+      glance.name: "SearXNG"
+      glance.icon: "si:searxng"
+      glance.category: "search"
+      glance.description: "Privacy-focused metasearch engine"
     environment:
       - SEARXNG_BASE_URL=http://searxng:8080/
     healthcheck:

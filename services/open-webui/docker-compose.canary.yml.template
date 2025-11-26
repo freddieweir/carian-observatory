@@ -38,6 +38,11 @@ services:
       start_period: 40s
     labels:
       - "com.centurylinklabs.watchtower.scope=canary"
+      - "glance.name=Open-WebUI Canary"
+      - "glance.icon=si:openai"
+      - "glance.url=https://webui-canary.${PRIMARY_DOMAIN:-yourdomain.com}"
+      - "glance.category=webui"
+      - "glance.description=AI chat interface (Canary testing)"
 
 networks:
   app-network:

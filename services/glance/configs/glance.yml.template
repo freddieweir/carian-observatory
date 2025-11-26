@@ -63,3 +63,46 @@ pages:
             source: ${HOMEPAGE_INTERNAL_URL:-https://homepage.yourdomain.com}
             height: 900
             title: "Internal Services Dashboard"
+
+  # Page 3: Infrastructure - Docker Container Status
+  - name: "Infrastructure"
+    columns:
+      - size: full
+        widgets:
+          - type: docker-containers
+            title: "Authentication Stack"
+            category: auth
+            sort-by: name
+            collapse-after: 3
+
+          - type: docker-containers
+            title: "Web Interface Stack"
+            category: webui
+            sort-by: name
+            collapse-after: 3
+
+          - type: docker-containers
+            title: "AI Search Stack"
+            category: search
+            sort-by: name
+            collapse-after: 3
+
+      - size: full
+        widgets:
+          - type: docker-containers
+            title: "Dashboard Stack"
+            category: dashboard
+            sort-by: name
+            collapse-after: 3
+
+          - type: docker-containers
+            title: "Observability Stack"
+            category: monitoring
+            sort-by: name
+            collapse-after: 5
+
+          - type: docker-containers
+            title: "Core Services"
+            category: core
+            sort-by: name
+            collapse-after: 5
