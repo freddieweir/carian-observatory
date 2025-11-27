@@ -1,13 +1,16 @@
 # Carian Observatory
 
+<!-- TODO: Add hero GIF/screenshot showing the platform dashboard in action (800x400px recommended) -->
+
 Carian Observatory is a Docker-based platform that integrates multiple AI services behind a unified authentication layer. It provides:
 
-- **AI Chat Interface** via Open-WebUI with support for multiple LLM providers
+- **AI Chat Interface** via Open-WebUI with support for multiple LLM providers (Ollama, OpenAI, LM Studio)
 - **AI-Powered Search** through Perplexica with SearXNG integration
 - **Centralized Authentication** using Authelia with WebAuthn/FIDO2 support
 - **Platform Monitoring** with Homepage dashboard and Glance feeds
 - **Full Observability** via PGLA stack (Prometheus, Grafana, Loki, Alertmanager)
-- **Secure Secret Management** through 1Password Connect API
+- **Remote Device Monitoring** for cross-network infrastructure (e.g., gaming PCs via Tailscale)
+- **Secure Secret Management** through 1Password CLI integration
 - **Smart Update Strategy** using dual watchtower configuration (production + canary)
 
 All services communicate over private Docker networks with SSL/TLS termination at the nginx reverse proxy layer. Configuration templates ensure no secrets are committed to version control.
@@ -23,6 +26,8 @@ _Naming scheme inspired by Elden Ring ([Image Source](https://eldenring.fandom.c
 ## System Architecture
 
 Carian Observatory uses a modular service architecture with Docker Compose's `include` feature, allowing independent service management while maintaining integration.
+
+<!-- TODO: Add architecture diagram showing service communication flow (Mermaid or image) -->
 
 ### Service Groups
 
@@ -118,12 +123,14 @@ Carian Observatory uses a modular service architecture with Docker Compose's `in
 - ✅ Authelia + Redis
 - ✅ Homepage + Glance
 - ✅ PGLA monitoring stack
+- ✅ Remote device monitoring (Gaming PC via Tailscale)
 - ✅ Nginx reverse proxy
 - ✅ Watchtower (production + canary)
+- ✅ LM Studio integration (Apple Silicon MLX models)
 
-**In Development:**
-- 🚧 PostgreSQL (memory storage backend)
-- 🚧 1Password Connect (currently using CLI injection)
+**Available but Disabled:**
+- 🔄 1Password Connect API (using CLI injection instead)
+- 🔄 PostgreSQL (vector storage backend)
 
 ### Modular Configuration
 
@@ -151,6 +158,8 @@ To disable a service, comment out its include line and restart: `docker compose 
 
 ## Quick Start
 
+<!-- TODO: Add terminal recording GIF of basic installation and startup (30-60 seconds) -->
+
 ### Prerequisites
 
 - **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux)
@@ -158,7 +167,7 @@ To disable a service, comment out its include line and restart: `docker compose 
 - **1Password CLI** (optional, for secret management)
 - Available ports: 80, 443, 8080-8093, 9090-9100
 
-**Platform Note**: Designed for macOS. Linux and Windows may require minor adjustments.
+**Platform Note**: Designed for macOS (Apple Silicon optimized). Linux and Windows may require minor adjustments.
 
 ### Installation
 
@@ -178,6 +187,7 @@ To disable a service, comment out its include line and restart: `docker compose 
    - `AUTHELIA_SESSION_SECRET` - Generate with `openssl rand -hex 32`
    - `AUTHELIA_STORAGE_ENCRYPTION_KEY` - Generate with `openssl rand -hex 32`
    - `GRAFANA_PASSWORD` - Secure admin password
+   - `LM_STUDIO_PORT` - LM Studio port for Apple Silicon models (default: 1234)
 
 3. **Deploy SSL certificates:**
 
@@ -223,18 +233,29 @@ All services require authentication via Authelia.
 
 ### Optional: 1Password Integration
 
-For automated API key management:
+For automated API key management via CLI:
 
 ```bash
-# Start 1Password Connect Server
+# Deploy API keys from 1Password vault using CLI
+./scripts/onepassword/deploy-api-keys.sh
+
+# Or use Connect Server (disabled by default)
 cd services/onepassword
 ./scripts/manage-connect-server.sh start
-
-# Deploy API keys from 1Password vault
-./scripts/deploy-api-keys.sh
 ```
 
-See [services/onepassword/README.md](services/onepassword/README.md) for detailed setup.
+### Optional: LM Studio (Apple Silicon)
+
+For local LLM inference with MLX-optimized models:
+
+1. Install [LM Studio](https://lmstudio.ai/)
+2. Start the local server (default port: 1234)
+3. Configure in `.env`:
+   ```bash
+   LM_STUDIO_HOST=host.docker.internal
+   LM_STUDIO_PORT=1234
+   ```
+4. Open-WebUI will auto-discover LM Studio models
 
 </details>
 
@@ -242,6 +263,8 @@ See [services/onepassword/README.md](services/onepassword/README.md) for detaile
 <summary><strong>🔐 Security Model</strong></summary>
 
 ## Security Architecture
+
+<!-- TODO: Add security flow diagram showing authentication and secret management paths -->
 
 ### Template-Based Configuration
 
@@ -271,11 +294,16 @@ carian-observatory/
 
 ### Secret Management
 
-**1Password Connect API:**
+**1Password CLI (Primary):**
+- Direct CLI injection for runtime secret deployment
+- Biometric authentication (Touch ID) on macOS
+- No persistent secrets stored locally
+- Used by `scripts/onepassword/deploy-api-keys.sh`
+
+**1Password Connect API (Optional):**
 - Sync container maintains encrypted vault cache
 - API container provides REST access to secrets
-- CLI injection for runtime secret deployment
-- No secrets stored in containers or environment files
+- Currently disabled by default (CLI preferred)
 
 **Environment Variables:**
 - Critical secrets in `.env` (gitignored)
@@ -325,6 +353,8 @@ access_control:
 <summary><strong>🛠️ Operations</strong></summary>
 
 ## Daily Operations
+
+<!-- TODO: Add terminal GIF demonstrating common operational commands -->
 
 ### Common Commands
 
@@ -424,12 +454,41 @@ docker compose up -d
 docker run --rm -v open-webui-fw_open-webui:/data -v $(pwd):/backup alpine tar czf /backup/openwebui-backup.tar.gz /data
 ```
 
-### Detailed Operations
+### IP Address Updates (Network Changes)
 
-See subdirectory READMEs for detailed operational guides:
-- [Authentication Scripts](scripts/authentication/README.md)
-- [Infrastructure Scripts](scripts/infrastructure/README.md)
-- [1Password Scripts](scripts/onepassword/README.md)
+When changing networks (e.g., traveling), update `/etc/hosts`:
+
+```bash
+# Auto-detect and update all domains
+sudo ./scripts/infrastructure/update-hosts-ip.sh auto
+
+# Or specify new IP manually
+sudo ./scripts/infrastructure/update-hosts-ip.sh 192.168.1.100
+```
+
+### Remote Device Monitoring
+
+For monitoring devices across networks (via Tailscale):
+
+```bash
+# Configure in .env
+GAMING_PC_INSTANCE_NAME=cachyos-gaming
+GAMING_PC_NODE_PORT=9100
+GAMING_PC_GPU_PORT=9200
+```
+
+Prometheus will scrape metrics from configured remote devices.
+
+### Script Directory Reference
+
+| Directory | Purpose |
+|-----------|---------|
+| `scripts/authentication/` | Password hashing, 2FA management, YubiKey setup |
+| `scripts/certificates/` | SSL certificate deployment and management |
+| `scripts/infrastructure/` | Host file updates, startup scripts |
+| `scripts/onepassword/` | 1Password CLI integration, API key deployment |
+| `scripts/security/` | Security checks, API key resolution |
+| `scripts/migration/` | Platform migration utilities |
 
 </details>
 
@@ -517,13 +576,15 @@ docker exec co-nginx-service nginx -t
 
 **Creating Templates:**
 1. Write configuration with `yourdomain.com` placeholders
-2. Save as `.template` file in `templates/services/{service}/`
-3. Add generation logic to `create-all-from-templates.sh`
-4. Generate working files: `./create-all-from-templates.sh`
+2. Save as `.template` file in service directory (e.g., `services/open-webui/docker-compose.yml.template`)
+3. Add generation logic to `scripts/create-all-from-templates.sh`
+4. Generate working files: `./scripts/create-all-from-templates.sh`
 
 **Template Variables:**
 - `yourdomain.com` → Replaced with `${PRIMARY_DOMAIN}`
 - `${VARIABLE}` → Replaced with environment variable value
+
+**Note:** Recent security changes moved docker-compose files to `.template` format. Working files are now generated and gitignored.
 
 </details>
 
@@ -533,23 +594,29 @@ docker exec co-nginx-service nginx -t
 
 ```
 carian-observatory/
-├── docker-compose.yml              # Master service orchestration
+├── docker-compose.yml              # Master service orchestration (uses include)
 ├── .env.example                    # Environment configuration template
-├── create-all-from-templates.sh    # Configuration generator
+├── create-all-from-templates.sh    # Configuration generator (templates → working files)
 ├── services/                       # Modular service definitions
-│   ├── authelia/                   # Authentication service
-│   ├── open-webui/                 # AI chat interface
-│   ├── perplexica/                 # AI search engine
-│   ├── homepage/                   # Platform dashboard
-│   ├── glance/                     # Monitoring dashboard
-│   ├── monitoring/                 # PGLA observability stack
-│   ├── nginx/                      # Reverse proxy + SSL
-│   └── onepassword/                # Secret management
-├── templates/                      # Configuration templates (git-safe)
+│   ├── authelia/                   # Authentication service + Redis
+│   ├── open-webui/                 # AI chat interface (production + canary templates)
+│   ├── perplexica/                 # AI search engine + SearXNG
+│   ├── homepage/                   # Platform dashboard + iframe proxy
+│   ├── glance/                     # RSS monitoring dashboard
+│   ├── monitoring/                 # PGLA observability stack (Prometheus, Grafana, Loki, Alertmanager)
+│   ├── nginx/                      # Reverse proxy + SSL termination
+│   ├── onepassword/                # 1Password Connect (optional)
+│   └── postgresql/                 # PostgreSQL + pgvector (optional)
+├── kubernetes/                     # Kubernetes manifests (experimental)
+│   └── perplexica/                 # Perplexica k8s deployment
 └── scripts/                        # Operational scripts
-    ├── authentication/             # Auth management scripts
-    ├── infrastructure/             # Platform management scripts
-    └── onepassword/                # Secret deployment scripts
+    ├── authentication/             # Password hashing, 2FA, YubiKey management
+    ├── certificates/               # SSL certificate deployment
+    ├── infrastructure/             # Host files, startup, IP updates
+    ├── onepassword/                # 1Password CLI integration
+    ├── security/                   # Security checks, API key resolution
+    ├── migration/                  # Platform migration utilities
+    └── services/                   # Service-specific management scripts
 ```
 
 ## Design Principles
