@@ -648,10 +648,23 @@ server {
 }
 
 # Monitoring Stack HTTPS (Grafana) with Authentication
+# NOTE: This server block uses dynamic upstream resolution to allow nginx to start
+# even when monitoring services aren't running. Uses Docker's internal DNS resolver.
 server {
     listen 443 ssl;
     http2 on;
     server_name monitoring.yourdomain.com;
+
+    # Dynamic resolver for optional monitoring services
+    # Allows nginx to start even if monitoring containers aren't running yet
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    resolver_timeout 5s;
+
+    # Define monitoring upstreams as variables for dynamic resolution at request time
+    # If services are down, requests return 502 instead of nginx failing to start
+    set $upstream_grafana co-monitoring-grafana:3000;
+    set $upstream_prometheus co-monitoring-prometheus:9090;
+    set $upstream_alertmanager co-monitoring-alerts:9093;
 
     ssl_certificate /etc/ssl/custom/monitoring.yourdomain.com.crt;
     ssl_certificate_key /etc/ssl/custom/monitoring.yourdomain.com.key;
@@ -677,7 +690,7 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        proxy_pass http://co-monitoring-grafana:3000;
+        proxy_pass http://$upstream_grafana;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -701,7 +714,7 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        proxy_pass http://co-monitoring-prometheus:9090/;
+        proxy_pass http://$upstream_prometheus/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -713,7 +726,7 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        proxy_pass http://co-monitoring-alerts:9093/;
+        proxy_pass http://$upstream_alertmanager/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
