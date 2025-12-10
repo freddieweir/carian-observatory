@@ -23,7 +23,6 @@ include:
   
   # Optional services (comment out if not needed)
   - path: services/homepage/docker-compose.yml
-  - path: services/glance/docker-compose.yml
   - path: services/monitoring/docker-compose.yml
   
   # Canary testing (uncomment to enable)
