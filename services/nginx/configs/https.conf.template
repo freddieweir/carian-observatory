@@ -573,7 +573,7 @@ server {
         auth_request_set $user $upstream_http_remote_user;
         error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        proxy_pass http://co-glance-service:8080;
+        proxy_pass http://cm-glance-service:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
