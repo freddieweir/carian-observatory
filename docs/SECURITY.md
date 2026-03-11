@@ -6,12 +6,12 @@ Observatory uses a template system to prevent secrets from entering version cont
 
 ```
 carian-observatory/
-├── templates/                    # Safe for git — yourdomain.com placeholders
+├── templates/                    # Safe for git (yourdomain.com placeholders)
 │   ├── .env.template
 │   └── services/{service}/
 │       ├── configs/*.template
 │       └── scripts/*.template
-├── services/                     # Gitignored — real domains
+├── services/                     # Gitignored (real domains)
 │   └── {service}/
 │       ├── configs/*.yaml
 │       └── scripts/*.sh
