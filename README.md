@@ -10,13 +10,13 @@ Part of [Carian Stacks](https://github.com/freddieweir/carian-stacks) |
 | Capability | How |
 |------------|-----|
 | Reverse proxy + SSL | Nginx terminates TLS, routes to all three stacks |
-| Monitoring | PGLA — Prometheus, Grafana, Loki, Alertmanager |
+| Monitoring | PGLA (Prometheus, Grafana, Loki, Alertmanager) |
 | Container metrics | cAdvisor + Node Exporter feed Prometheus |
-| Auto-updates | Dual watchtower — daily production, hourly canary |
+| Auto-updates | Dual watchtower: daily production, hourly canary |
 | Secret management | 1Password Connect API on isolated network |
 | Shared networking | Creates `carian-shared` bridge for Manor and Library |
 
-> Deploy Observatory **first** — it creates the network other stacks join.
+> Deploy Observatory **first** - it creates the network other stacks join.
 
 ## Services
 
@@ -83,7 +83,7 @@ docker compose ps
 
 ### Template System
 
-Configuration uses `yourdomain.com` placeholders — real domains stay in `.env` (gitignored). Run `./create-all-from-templates.sh` to generate working configs from templates.
+Configuration uses `yourdomain.com` placeholders; real domains stay in `.env` (gitignored). Run `./create-all-from-templates.sh` to generate working configs from templates.
 
 ## Further Reading
 
@@ -96,4 +96,4 @@ Configuration uses `yourdomain.com` placeholders — real domains stay in `.env`
 
 ---
 
-<sub>Named after the [Carian Study Hall](https://eldenring.wiki.fextralife.com/Carian+Study+Hall) from Elden Ring — the astronomers who studied the stars from their towers, watching over the realm below.</sub>
+<sub>Named after the [Carian Study Hall](https://eldenring.wiki.fextralife.com/Carian+Study+Hall) from Elden Ring - the astronomers who studied the stars from their towers, watching over the realm below.</sub>
