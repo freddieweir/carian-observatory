@@ -194,20 +194,9 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
     
-    location /authelia {
-        internal;
-        proxy_pass http://host.docker.internal:9091/api/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    }
     
     location / {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
         
-        proxy_set_header Remote-User $user;
         set $upstream_perplexica co-perplexica-service:3000;
         proxy_pass http://$upstream_perplexica;
         proxy_set_header Host $host;
@@ -228,9 +217,6 @@ server {
 
     # Iframe-friendly route for Perplexica
     location /iframe {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         # Remove restrictive frame options and CSP for iframe embedding
         proxy_hide_header X-Frame-Options;
@@ -238,7 +224,6 @@ server {
         add_header X-Frame-Options "ALLOWFROM https://glance.yourdomain.com" always;
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
-        proxy_set_header Remote-User $user;
         set $upstream_perplexica co-perplexica-service:3000;
         proxy_pass http://$upstream_perplexica;
         proxy_set_header Host $host;
@@ -281,18 +266,8 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
     
-    location /authelia {
-        internal;
-        proxy_pass http://host.docker.internal:9091/api/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    }
     
     location / {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
         
         set $upstream_homepage co-homepage-service:3000;
         proxy_pass http://$upstream_homepage;
@@ -300,7 +275,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Remote-User $user;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -315,9 +289,6 @@ server {
 
     # Iframe-friendly route for Homepage
     location /iframe {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         # Remove restrictive frame options and CSP for iframe embedding
         proxy_hide_header X-Frame-Options;
@@ -325,7 +296,6 @@ server {
         add_header X-Frame-Options "ALLOWFROM https://glance.yourdomain.com" always;
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
-        proxy_set_header Remote-User $user;
         set $upstream_homepage co-homepage-service:3000;
         proxy_pass http://$upstream_homepage/;
         proxy_set_header Host $host;
@@ -536,25 +506,14 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
 
-    location /authelia {
-        internal;
-        proxy_pass http://host.docker.internal:9091/api/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    }
 
     location / {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         proxy_pass http://co-monitoring-grafana:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Remote-User $user;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -569,9 +528,6 @@ server {
 
     # Direct access to other monitoring tools (for admin use)
     location /prometheus/ {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         proxy_pass http://co-monitoring-prometheus:9090/;
         proxy_set_header Host $host;
@@ -581,9 +537,6 @@ server {
     }
 
     location /alertmanager/ {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         proxy_pass http://co-monitoring-alerts:9093/;
         proxy_set_header Host $host;
