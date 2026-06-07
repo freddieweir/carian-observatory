@@ -44,76 +44,16 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
     
-    location /authelia {
-        internal;
-        proxy_pass http://host.docker.internal:9091/api/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    }
     
     location / {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        # Enable response body filtering for session validator injection
-        sub_filter_once off;
 
-        # Inject proactive session validator to detect expiry before user submits
-        sub_filter '</body>' '<script>
-(function() {
-    "use strict";
-    let isChecking = false;
-    let consecutiveFailures = 0;
-    const MAX_FAILURES = 3;
-
-    // Check session validity every 60 seconds
-    const checkSession = async () => {
-        if (isChecking) return;
-        isChecking = true;
-
-        try {
-            const response = await fetch(window.location.href, {
-                method: "HEAD",
-                cache: "no-cache",
-                credentials: "same-origin"
-            });
-
-            // If we get 401 or redirect, session expired
-            if (response.status === 401 || response.redirected) {
-                console.warn("[Session Monitor] Authentication expired, redirecting to login...");
-                window.location.href = "https://auth.yourdomain.com/?rd=" + encodeURIComponent(window.location.href);
-                return;
-            }
-
-            // Reset failure counter on success
-            consecutiveFailures = 0;
-        } catch (err) {
-            consecutiveFailures++;
-            console.error("[Session Monitor] Check failed (" + consecutiveFailures + "/" + MAX_FAILURES + "):", err);
-
-            // Stop checking after repeated failures to prevent resource waste
-            if (consecutiveFailures >= MAX_FAILURES) {
-                console.warn("[Session Monitor] Max failures reached, disabling monitor");
-                clearInterval(sessionCheckInterval);
-            }
-        } finally {
-            isChecking = false;
-        }
-    };
-
-    const sessionCheckInterval = setInterval(checkSession, 60000);
-    console.info("[Session Monitor] Proactive session checking enabled (60s interval)");
-})();
-</script></body>';
 
         proxy_pass http://co-open-webui-canary:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Remote-User $user;
 
         # Allow iframe embedding from Glance
         proxy_hide_header X-Frame-Options;
@@ -133,9 +73,6 @@ server {
 
     # Iframe-friendly route for Open-WebUI Canary
     location /iframe {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         # Remove restrictive frame options and CSP for iframe embedding
         proxy_hide_header X-Frame-Options;
@@ -143,7 +80,6 @@ server {
         add_header X-Frame-Options "ALLOWFROM https://glance.yourdomain.com" always;
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
-        proxy_set_header Remote-User $user;
         proxy_pass http://co-open-webui-canary:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -183,76 +119,16 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
     
-    location /authelia {
-        internal;
-        proxy_pass http://host.docker.internal:9091/api/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    }
     
     location / {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
-        # Enable response body filtering for session validator injection
-        sub_filter_once off;
 
-        # Inject proactive session validator to detect expiry before user submits
-        sub_filter '</body>' '<script>
-(function() {
-    "use strict";
-    let isChecking = false;
-    let consecutiveFailures = 0;
-    const MAX_FAILURES = 3;
-
-    // Check session validity every 60 seconds
-    const checkSession = async () => {
-        if (isChecking) return;
-        isChecking = true;
-
-        try {
-            const response = await fetch(window.location.href, {
-                method: "HEAD",
-                cache: "no-cache",
-                credentials: "same-origin"
-            });
-
-            // If we get 401 or redirect, session expired
-            if (response.status === 401 || response.redirected) {
-                console.warn("[Session Monitor] Authentication expired, redirecting to login...");
-                window.location.href = "https://auth.yourdomain.com/?rd=" + encodeURIComponent(window.location.href);
-                return;
-            }
-
-            // Reset failure counter on success
-            consecutiveFailures = 0;
-        } catch (err) {
-            consecutiveFailures++;
-            console.error("[Session Monitor] Check failed (" + consecutiveFailures + "/" + MAX_FAILURES + "):", err);
-
-            // Stop checking after repeated failures to prevent resource waste
-            if (consecutiveFailures >= MAX_FAILURES) {
-                console.warn("[Session Monitor] Max failures reached, disabling monitor");
-                clearInterval(sessionCheckInterval);
-            }
-        } finally {
-            isChecking = false;
-        }
-    };
-
-    const sessionCheckInterval = setInterval(checkSession, 60000);
-    console.info("[Session Monitor] Proactive session checking enabled (60s interval)");
-})();
-</script></body>';
 
         proxy_pass http://co-open-webui-service:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Remote-User $user;
 
         # Allow iframe embedding from Glance
         proxy_hide_header X-Frame-Options;
@@ -272,9 +148,6 @@ server {
 
     # Iframe-friendly route for Open-WebUI
     location /iframe {
-        auth_request /authelia;
-        auth_request_set $user $upstream_http_remote_user;
-        error_page 401 =302 https://auth.yourdomain.com/?rd=$scheme://$http_host$request_uri;
 
         # Remove restrictive frame options and CSP for iframe embedding
         proxy_hide_header X-Frame-Options;
@@ -282,7 +155,6 @@ server {
         add_header X-Frame-Options "ALLOWFROM https://glance.yourdomain.com" always;
         add_header Content-Security-Policy "frame-ancestors 'self' https://glance.yourdomain.com https://*.yourdomain.com;" always;
 
-        proxy_set_header Remote-User $user;
         proxy_pass http://co-open-webui-service:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
