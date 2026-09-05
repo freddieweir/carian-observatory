@@ -36,7 +36,7 @@ not what files it touches.
 **Demo.** Required for any PR that changes code. Two assets: a GIF that plays
 inline in the PR page and an mp4 with player controls for anyone who wants to
 pause. One italic caption says what happens on screen and what was redacted.
-Produce and host them with `scripts/publish-demo.sh <PR> recording.mp4`, which
+Produce and host them with `.github/scripts/publish-demo.sh <PR> recording.mp4`, which
 converts the recording and uploads both files to a prerelease tag `demo-pr-<N>`
 (marked "Not a software release"), then prints the two markdown lines. Dragging
 the mp4 into the editor also works: GitHub hosts it and renders an inline player.
@@ -128,7 +128,7 @@ identically on a laptop, in Actions, and in an agent sandbox.
 
 An agent opening a PR here writes the body from `.github/PULL_REQUEST_TEMPLATE.md`,
 replaces every `[[placeholder]]`, records and publishes a demo with
-`scripts/publish-demo.sh` when it can, and otherwise states the waiver reason
+`.github/scripts/publish-demo.sh` when it can, and otherwise states the waiver reason
 honestly. It names itself once, in Provenance, and appends no attribution
 footer and no session link: the body and the commit messages carry nothing
 that identifies a private session. It runs the checker on the drafted body and fixes every error before
