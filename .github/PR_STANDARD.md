@@ -36,7 +36,7 @@ not what files it touches.
 **Demo.** Required for any PR that changes code. Two assets: a GIF that plays
 inline in the PR page and an mp4 with player controls for anyone who wants to
 pause. One italic caption says what happens on screen and what was redacted.
-Produce and host them with `tomb-of-nazarick/actions/pr-standard/publish-demo.sh <PR> recording.mp4`, which
+Produce and host them with `.github/scripts/publish-demo.sh <PR> recording.mp4`, which
 converts the recording and uploads both files to a prerelease tag `demo-pr-<N>`
 (marked "Not a software release"), then prints the two markdown lines. Dragging
 the mp4 into the editor also works: GitHub hosts it and renders an inline player.
@@ -105,11 +105,12 @@ the body. The report lists the allowance, so the reviewer sees it.
 
 `.github/workflows/pr-standard.yml` runs on `opened`, `edited`, `reopened`,
 `synchronize` and `ready_for_review`, so fixing the description re-runs the
-check without a push. It calls the `pr-standard` action in
-[tomb-of-nazarick](https://github.com/freddieweir/tomb-of-nazarick), which
-first runs the checker's own unit tests, then feeds the checker the PR body and
-the list of changed files. The template, this document and the two workflows
-are deployed and refreshed by the tomb's `fortify` command. The result lands in the
+check without a push. It first runs the checker's own unit tests, then feeds
+the checker the PR body and the list of changed files. The workflow, the checker
+in `.github/scripts/`, the template and this document are copies deployed and
+refreshed by the `fortify` command in
+[tomb-of-nazarick](https://github.com/freddieweir/tomb-of-nazarick), where the
+source lives (`actions/pr-standard`); edit there, then re-run `fortify`. The result lands in the
 job summary and, for same-repo PRs that are not drafts, in one comment on the
 PR that is updated in place on every run. A failing body fails the check.
 
@@ -117,11 +118,11 @@ To make the standard blocking, add the check `PR Standard / body` to the
 required status checks in the branch ruleset for `main`
 (Settings → Rules → Rulesets → require status checks to pass).
 
-Run the same check before opening a PR, from your tomb-of-nazarick checkout:
+Run the same check before opening a PR:
 
 ```
 git diff --name-only origin/main...HEAD > /tmp/changed.txt
-python3 <tomb>/actions/pr-standard/check_pr_standard.py --body /tmp/pr-body.md --files /tmp/changed.txt
+python3 .github/scripts/check_pr_standard.py --body /tmp/pr-body.md --files /tmp/changed.txt
 ```
 
 `check_pr_standard.py` and its tests are standard-library Python, so they run
@@ -131,7 +132,7 @@ identically on a laptop, in Actions, and in an agent sandbox.
 
 An agent opening a PR here writes the body from `.github/PULL_REQUEST_TEMPLATE.md`,
 replaces every `[[placeholder]]`, records and publishes a demo with
-`tomb-of-nazarick/actions/pr-standard/publish-demo.sh` when it can, and otherwise states the waiver reason
+`.github/scripts/publish-demo.sh` when it can, and otherwise states the waiver reason
 honestly. It names itself once, in Provenance, and appends no attribution
 footer and no session link: the body and the commit messages carry nothing
 that identifies a private session. It runs the checker on the drafted body and fixes every error before
