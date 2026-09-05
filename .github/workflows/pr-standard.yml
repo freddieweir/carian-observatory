@@ -1,0 +1,81 @@
+name: PR Standard
+
+# Every pull request body must follow .github/PR_STANDARD.md:
+# H1 + lede, Demo (GIF + mp4, or a stated waiver), Test Plan with checked boxes,
+# Proof (redacted) in <details>, Full Summary / Files, Provenance, and nothing
+# that should have been redacted. Docs-only PRs skip the demo and proof.
+#
+# Runs on body edits too, so fixing the description re-runs the check without a push.
+# Make it a required status check under Settings -> Rules (check name: "PR Standard / body").
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-standard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  body:
+    name: body
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Self-test the checker
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+
+      - name: Collect changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > changed.txt
+          echo "$(wc -l < changed.txt) changed file(s)"
+
+      - name: Write PR body to a file
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > body.md
+
+      - name: Check the body against the standard
+        id: check
+        env:
+          PR_STANDARD_BLOCKED_DOMAINS: ${{ vars.PRODUCTION_DOMAIN }}
+        run: |
+          set +e
+          python3 .github/scripts/check_pr_standard.py --body body.md --files changed.txt --summary summary.md
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post or refresh the report on the PR
+        # Only same-repo PRs carry a token that can comment; forks still get the step summary above.
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- pr-standard-report -->';
+            const body = marker + '\n' + fs.readFileSync('summary.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const mine = comments.find(c => c.body && c.body.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Fail if the body does not meet the standard
+        if: steps.check.outputs.status != '0'
+        run: |
+          echo "::error::PR body does not meet .github/PR_STANDARD.md (see the job summary)."
+          exit 1

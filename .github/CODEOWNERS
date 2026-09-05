@@ -1,25 +1,29 @@
 # Carian Observatory Code Owners
-# Security-sensitive files require security team review
+# The repository owner reviews every pull request (see .github/PR_STANDARD.md);
+# security-sensitive paths additionally route to the security team.
+
+* @freddieweir
+
 
 # Root configuration files
-/.env.template              @security-team
-/docker-compose*.yml        @security-team
-/create-all-from-templates.sh @security-team
+/.env.template              @security-team @freddieweir
+/docker-compose*.yml        @security-team @freddieweir
+/create-all-from-templates.sh @security-team @freddieweir
 
 # Template system
-/templates/                 @security-team
+/templates/                 @security-team @freddieweir
 
 # GitHub workflows and security configs
-/.github/                   @security-team
-/.gitleaks.toml            @security-team
+/.github/                   @security-team @freddieweir
+/.gitleaks.toml            @security-team @freddieweir
 
 # Service configurations
-/services/*/docker-compose.yml @security-team
+/services/*/docker-compose.yml @security-team @freddieweir
 
 # Scripts that handle secrets
-/scripts/onepassword/       @security-team
-/scripts/authentication/    @security-team
+/scripts/onepassword/       @security-team @freddieweir
+/scripts/authentication/    @security-team @freddieweir
 
 # Documentation that might contain examples
-/README.md                  @security-team
-/SECURITY.md               @security-team
+/README.md                  @security-team @freddieweir
+/SECURITY.md               @security-team @freddieweir
