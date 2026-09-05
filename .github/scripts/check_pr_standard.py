@@ -353,7 +353,8 @@ def render_markdown(report: Report) -> str:
         rows.append(f"| {glyph[f.level]} | {f.check} | {f.message} |")
     if len(rows) == 2:
         rows.append("| ✅ | all | every section present, nothing to redact |")
-    tail = "Rules: `.github/PR_STANDARD.md`. Run locally: `python3 .github/scripts/check_pr_standard.py --body body.md --files changed.txt`."
+    me = os.path.relpath(os.path.abspath(__file__), os.getcwd())
+    tail = f"Rules: `.github/PR_STANDARD.md`. Run locally: `python3 {me} --body body.md --files changed.txt`."
     return "\n".join([head, "", *rows, "", tail, ""])
 
 

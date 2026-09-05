@@ -106,7 +106,11 @@ the body. The report lists the allowance, so the reviewer sees it.
 `.github/workflows/pr-standard.yml` runs on `opened`, `edited`, `reopened`,
 `synchronize` and `ready_for_review`, so fixing the description re-runs the
 check without a push. It first runs the checker's own unit tests, then feeds
-the checker the PR body and the list of changed files. The result lands in the
+the checker the PR body and the list of changed files. The workflow, the checker
+in `.github/scripts/`, the template and this document are copies deployed and
+refreshed by the `fortify` command in
+[tomb-of-nazarick](https://github.com/freddieweir/tomb-of-nazarick), where the
+source lives (`actions/pr-standard`); edit there, then re-run `fortify`. The result lands in the
 job summary and, for same-repo PRs that are not drafts, in one comment on the
 PR that is updated in place on every run. A failing body fails the check.
 
@@ -132,4 +136,4 @@ replaces every `[[placeholder]]`, records and publishes a demo with
 honestly. It names itself once, in Provenance, and appends no attribution
 footer and no session link: the body and the commit messages carry nothing
 that identifies a private session. It runs the checker on the drafted body and fixes every error before
-the PR is opened. `CLAUDE.md` in the repository root repeats this in short.
+the PR is opened. `CLAUDE.md` in the repository root repeats this in short where the repository keeps one.

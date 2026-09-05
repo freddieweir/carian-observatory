@@ -94,6 +94,16 @@ CODE_FILES = ["tracksplit/segment.py", "tests/test_segment.py"]
 DOC_FILES = ["README.md", "docs/guide.md"]
 
 
+def template_path() -> str:
+    """The PR template next to this suite: tomb layout (templates/pr-standard) or a deployed .github/scripts copy."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for rel in ("../../templates/pr-standard/PULL_REQUEST_TEMPLATE.md", "../PULL_REQUEST_TEMPLATE.md", "../../.github/PULL_REQUEST_TEMPLATE.md"):
+        path = os.path.normpath(os.path.join(here, rel))
+        if os.path.exists(path):
+            return path
+    raise FileNotFoundError("PULL_REQUEST_TEMPLATE.md not found near " + here)
+
+
 def run(body: str, files=None, domains=None) -> c.Report:
     return c.run(body, CODE_FILES if files is None else files, domains or [])
 
@@ -108,15 +118,13 @@ class GoldenTests(unittest.TestCase):
         self.assertTrue(r.ok, c.render_text(r))
 
     def test_template_itself_fails_on_placeholders(self):
-        here = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(here, "..", "PULL_REQUEST_TEMPLATE.md"), encoding="utf-8") as fh:
+        with open(template_path(), encoding="utf-8") as fh:
             r = run(fh.read())
         self.assertIn("placeholders", errors(r))
 
     def test_template_only_fails_on_placeholders(self):
         """Filling every [[placeholder]] with plausible text must satisfy the structural checks."""
-        here = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(here, "..", "PULL_REQUEST_TEMPLATE.md"), encoding="utf-8") as fh:
+        with open(template_path(), encoding="utf-8") as fh:
             filled = c.PLACEHOLDER_RE.sub("https://github.com/o/r/releases/download/demo-pr-2/x.gif", fh.read())
         filled = filled.replace("x.gif](https://github.com/o/r/releases/download/demo-pr-2/x.gif)_", "x.mp4](https://github.com/o/r/releases/download/demo-pr-2/x.mp4)_")
         r = run(filled)
@@ -294,6 +302,8 @@ class OutputTests(unittest.TestCase):
         md = c.render_markdown(run(GOLDEN.replace("## Demo", "## Nope")))
         self.assertTrue(md.startswith("### PR standard: failed"))
         self.assertIn("| ❌ | demo |", md)
+        self.assertIn("check_pr_standard.py --body", md)
+        self.assertNotIn(".github/scripts/check_pr_standard.py", md.replace(os.path.relpath(c.__file__), ""))
 
 
 if __name__ == "__main__":

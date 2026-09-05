@@ -1,9 +1,9 @@
 name: PR Inbox
 
-# Assign every pull request to the repository owner the moment it opens, so it
-# shows up under "Assigned" in their pull request inbox and nothing slips by.
-# Review requests come from .github/CODEOWNERS; this covers the assignee side,
-# including PRs the owner opened themselves.
+# Deployed by tomb-of-nazarick (fortify). Assigns every pull request to the
+# repository owner on open, reopen and ready-for-review; CODEOWNERS covers the
+# review request. Inline rather than an action call, so it works in public
+# repositories too (a private action cannot be called from a public repository).
 
 on:
   pull_request:
@@ -23,7 +23,6 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
-            const already = (pr.assignees || []).some(a => a.login === owner);
-            if (already) { core.info(`${owner} already assigned`); return; }
+            if ((pr.assignees || []).some(a => a.login === owner)) { core.info(`${owner} already assigned`); return; }
             await github.rest.issues.addAssignees({ owner, repo, issue_number: pr.number, assignees: [owner] });
             core.info(`assigned ${owner} to #${pr.number}`);
