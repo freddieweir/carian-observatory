@@ -50,7 +50,7 @@ WAIVER_RE = re.compile(
 WAIVER_MIN_REASON = 10
 
 PLACEHOLDER_RE = re.compile(r"\[\[[^\]\n]+\]\]")
-FOOTER_RE = re.compile(r"^\s*(?:🤖\s*)?Generated with \[?Claude Code\]?", re.I | re.M)
+FOOTER_RE = re.compile(r"^\s*[_*]*(?:🤖\s*)?Generated (?:with|by) \[?Claude Code\]?", re.I | re.M)
 CHECKED_RE = re.compile(r"^\s*[-*]\s+\[[xX]\]\s+\S", re.M)
 UNCHECKED_RE = re.compile(r"^\s*[-*]\s+\[ \]\s+\S", re.M)
 BULLET_RE = re.compile(r"^\s*[-*]\s+\S", re.M)
@@ -293,7 +293,7 @@ def check_placeholders(report: Report, visible: str) -> None:
 
 def check_footer(report: Report, visible: str) -> None:
     if FOOTER_RE.search(visible):
-        report.add("footer", ERROR, "Drop the `Generated with Claude Code` footer; Provenance already says who authored the PR.")
+        report.add("footer", ERROR, "Drop the `Generated with/by Claude Code` footer; Provenance already says who authored the PR.")
 
 
 def check_redaction(report: Report, raw: str, blocked_domains: list[str]) -> None:
