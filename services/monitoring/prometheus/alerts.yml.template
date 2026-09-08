@@ -2,6 +2,48 @@
 # Start with essential alerts to avoid alert fatigue
 
 groups:
+  - name: syncthing-alerts
+    rules:
+      - alert: SyncthingScrapeDown
+        expr: up{job="syncthing"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: syncthing
+        annotations:
+          summary: "Syncthing metrics unavailable on {{ $labels.host }}"
+          description: "Prometheus has failed to scrape Syncthing on {{ $labels.host }} for more than 2 minutes."
+
+      - alert: SyncthingDeviceDisconnected
+        expr: syncthing_connections_active == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: syncthing
+        annotations:
+          summary: "Syncthing device disconnected from {{ $labels.host }}"
+          description: "Device {{ $labels.device }} has had no active connection to {{ $labels.host }} for more than 5 minutes."
+
+      - alert: SyncthingFolderError
+        expr: syncthing_model_folder_state == 8
+        for: 2m
+        labels:
+          severity: critical
+          service: syncthing
+        annotations:
+          summary: "Syncthing folder {{ $labels.folder }} is in error on {{ $labels.host }}"
+          description: "Folder state 8 (FolderError) has persisted for more than 2 minutes; inspect the Syncthing logs for health or pull errors."
+
+      - alert: SyncthingFolderOutOfSync
+        expr: syncthing_model_folder_summary{scope="need",type=~"files|directories|symlinks|deleted"} > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: syncthing
+        annotations:
+          summary: "Syncthing folder {{ $labels.folder }} is out of sync on {{ $labels.host }}"
+          description: "Folder {{ $labels.folder }} has needed {{ $labels.type }} for more than 15 minutes."
+
   - name: critical-services
     rules:
       # Service Down Alert - Critical for all services

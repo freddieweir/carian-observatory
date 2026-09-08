@@ -64,6 +64,21 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
 
+  # Local Syncthing is loopback-only; syncthing-relay bridges it without
+  # terminating authentication. The API key remains a Docker secret.
+  - job_name: 'syncthing'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    http_headers:
+      X-API-Key:
+        files: ['/run/secrets/syncthing_api_key']
+    static_configs:
+      - targets: ['host.docker.internal:${SYNCTHING_RELAY_PORT}']
+        labels:
+          instance: '${SYNCTHING_FORGE_HOST_LABEL}'
+          host: '${SYNCTHING_FORGE_HOST_LABEL}'
+          service_name: 'syncthing'
+
   # Add HTTP probes for external service availability
   - job_name: 'blackbox-http'
     metrics_path: /probe
