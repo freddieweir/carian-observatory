@@ -13,6 +13,10 @@ volumes:
   loki_data:
     name: ${USER_PREFIX}-loki-data
 
+secrets:
+  syncthing_api_key:
+    file: ${SYNCTHING_API_KEY_FILE:-./secrets/syncthing-api-key}
+
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
@@ -23,6 +27,8 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
+    secrets:
+      - syncthing_api_key
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -30,10 +36,13 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
     ports:
       - "9090:9090"
     networks:
       - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     labels:
       - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
       - "com.${COMPOSE_PROJECT_NAME}.component=prometheus"
@@ -169,7 +178,12 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail/promtail.yml:/etc/promtail/promtail.yml:ro
-    command: -config.file=/etc/promtail/promtail.yml
+      - /var/log/journal:/var/log/journal:ro
+      - /run/log/journal:/run/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    command: -config.file=/etc/promtail/promtail.yml -config.expand-env=true
+    environment:
+      SYNCTHING_FORGE_HOST_LABEL: ${SYNCTHING_FORGE_HOST_LABEL}
     networks:
       - app-network
     labels:
@@ -177,6 +191,22 @@ services:
       - "com.${COMPOSE_PROJECT_NAME}.component=promtail"
     depends_on:
       - loki
+
+  # Relay the loopback-only Syncthing API into Prometheus's Docker namespace.
+  # Syncthing still authenticates every request with X-API-Key. The relay binds
+  # only to the docker bridge gateway (host-gateway as seen by containers), so it
+  # is not reachable from the tailnet or LAN.
+  syncthing-relay:
+    image: alpine/socat:latest
+    container_name: ${USER_PREFIX}-monitoring-syncthing-relay
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - "TCP-LISTEN:${SYNCTHING_RELAY_PORT:-18384},fork,reuseaddr,bind=${SYNCTHING_RELAY_BIND:-172.17.0.1}"
+      - "TCP:127.0.0.1:8384"
+    labels:
+      - "com.${COMPOSE_PROJECT_NAME}.service=monitoring"
+      - "com.${COMPOSE_PROJECT_NAME}.component=syncthing-relay"
 
   # Alertmanager - Alert handling
   alertmanager:

@@ -1,0 +1,80 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 100}]}, "unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [{"editorMode": "code", "expr": "100 * (1 - syncthing_model_folder_summary{scope=\"need\",type=\"bytes\",host=~\"$host\"} / clamp_min(syncthing_model_folder_summary{scope=\"global\",type=\"bytes\",host=~\"$host\"}, 1))", "legendFormat": "{{host}} / {{folder}}", "refId": "A"}],
+      "title": "Folder completion by bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [], "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [{"editorMode": "code", "expr": "syncthing_model_folder_summary{scope=\"need\",type=~\"files|directories|symlinks|deleted\",host=~\"$host\"}", "legendFormat": "{{host}} / {{folder}} / {{type}}", "refId": "A"}],
+      "title": "Needed items",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [], "unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "id": 3,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [{"editorMode": "code", "expr": "syncthing_model_folder_summary{scope=\"need\",type=\"bytes\",host=~\"$host\"}", "legendFormat": "{{host}} / {{folder}}", "refId": "A"}],
+      "title": "Needed bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "Disconnected"}, "1": {"color": "green", "text": "Connected"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "id": 4,
+      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "syncthing_connections_active{host=~\"$host\"}", "legendFormat": "{{host}} / {{device}}", "refId": "A"}],
+      "title": "Device connections",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "green", "text": "OK"}, "8": {"color": "red", "text": "ERROR"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 8}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "id": 5,
+      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "syncthing_model_folder_state{host=~\"$host\"}", "legendFormat": "{{host}} / {{folder}}", "refId": "A"}],
+      "title": "Folder state (8 = error)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "id": 6,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+      "targets": [{"editorMode": "code", "expr": "{service_name=\"syncthing\", host=~\"$host\"}", "queryType": "range", "refId": "A"}],
+      "title": "Syncthing logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["carian-observatory", "syncthing"],
+  "templating": {"list": [{"current": {"selected": false, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "definition": "label_values(syncthing_build_info, host)", "hide": 0, "includeAll": true, "label": "Host", "multi": true, "name": "host", "options": [], "query": {"query": "label_values(syncthing_build_info, host)", "refId": "PrometheusVariableQueryEditor-VariableQuery"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}]},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Syncthing",
+  "uid": "carian-syncthing",
+  "version": 1,
+  "weekStart": ""
+}
