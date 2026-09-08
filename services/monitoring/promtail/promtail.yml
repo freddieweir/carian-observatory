@@ -11,6 +11,22 @@ clients:
     tenant_id: carian-observatory
 
 scrape_configs:
+  # Syncthing systemd service logs from the host journal.
+  - job_name: syncthing-journal
+    journal:
+      path: /var/log/journal
+      max_age: 12h
+      labels:
+        job: syncthing
+        host: ${SYNCTHING_FORGE_HOST_LABEL}
+        service_name: syncthing
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        regex: 'syncthing@fweir\.service'
+        action: keep
+      - source_labels: ['__journal__systemd_unit']
+        target_label: unit
+
   # All Carian Observatory Docker containers
   - job_name: carian-observatory-all
     docker_sd_configs:
