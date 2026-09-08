@@ -22,7 +22,7 @@ scrape_configs:
         service_name: syncthing
     relabel_configs:
       - source_labels: ['__journal__systemd_unit']
-        regex: 'syncthing@fweir\.service'
+        regex: 'syncthing(@[^.]+)?\.service'
         action: keep
       - source_labels: ['__journal__systemd_unit']
         target_label: unit

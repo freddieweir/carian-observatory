@@ -64,7 +64,7 @@ docker compose up -d syncthing-relay prometheus promtail grafana
 `--web.enable-remote-write-receiver` is included so the Mac can push to the
 existing `/prometheus/api/v1/write` endpoint on host port 9095. Promtail mounts
 the persistent and runtime journal locations and keeps only
-`syncthing@fweir.service`, labeling it with `host` and `unit`.
+the `syncthing.service` or `syncthing@<user>.service` unit, labeling it with `host` and `unit`.
 
 ## Apply on the Mac
 
