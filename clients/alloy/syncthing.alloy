@@ -1,0 +1,38 @@
+// Syncthing telemetry on macOS. This fragment expects the shared
+// loki.write.carian and prometheus.remote_write.carian outputs from 00-outputs.alloy.
+
+local.file "syncthing_api_key" {
+	filename  = "/opt/homebrew/etc/grafana-alloy/syncthing-api-key"
+	is_secret = true
+}
+
+prometheus.scrape "syncthing" {
+	job_name        = "syncthing"
+	scrape_interval = "15s"
+	metrics_path    = "/metrics"
+	http_headers    = { "X-API-Key" = [local.file.syncthing_api_key.content] }
+
+	targets = [{
+		__address__  = "127.0.0.1:8384",
+		instance     = "<mac-host>",
+		host         = "<mac-host>",
+		service_name = "syncthing",
+	}]
+
+	forward_to = [prometheus.remote_write.carian.receiver]
+}
+
+local.file_match "syncthing" {
+	path_targets = [{
+		__path__     = "/Users/<mac-user>/Library/Application Support/Syncthing/syncthing.log",
+		host         = "<mac-host>",
+		job          = "syncthing",
+		service_name = "syncthing",
+		unit         = "syncthing",
+	}]
+}
+
+loki.source.file "syncthing" {
+	targets    = local.file_match.syncthing.targets
+	forward_to = [loki.write.carian.receiver]
+}
