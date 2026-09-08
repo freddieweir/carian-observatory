@@ -4,6 +4,7 @@ apiVersion: 1
 datasources:
   # Prometheus - Primary metrics datasource
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     orgId: 1
@@ -18,6 +19,7 @@ datasources:
 
   # Loki - Log aggregation datasource
   - name: Loki
+    uid: loki
     type: loki
     access: proxy
     orgId: 1
